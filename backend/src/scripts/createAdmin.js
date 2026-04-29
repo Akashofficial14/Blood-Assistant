@@ -6,9 +6,9 @@ dotenv.config()
 
 const createAdmin = async () => {
     try {
-            await mongoose.connect("mongodb://localhost:27017/blood-assistant");
-    console.log('MongoDB connected...');
- 
+        await mongoose.connect("mongodb://localhost:27017/blood-assistant");
+        console.log('MongoDB connected...');
+
         const adminData = {
             name: 'Akash Warade',
             email: 'akashwarade666@gmail.com',
