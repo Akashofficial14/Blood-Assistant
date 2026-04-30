@@ -7,12 +7,23 @@
 html{
   font-family: Arial, Helvetica, sans-serif;
 }
-/* *{
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Custom Scrollbar Styling */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 4px; /* Makes it thin and sleek */
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent; /* Keeps the background clean */
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* Slate-300 color */
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ae1417; /* Matches your Red theme on hover */
+  }
 }
-html,body{
-  height: 100%;
-  width: 100%;
-} */

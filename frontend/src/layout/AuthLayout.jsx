@@ -29,23 +29,31 @@ const AuthLayout = () => {
 
     try {
       const res = await axios.post(endpoint, data, { withCredentials: true });
-      if (res.data) {
-        const role = res.data.user?.userRole;
-        const token = res.data.token || res.data.user?._id; // Get token from response
-        
-        localStorage.setItem("role", role);
-        if (token) {
-          localStorage.setItem("token", token);
-        }
-        
-        // Dispatch storage event to notify other components (with small delay to ensure localStorage is written)
+
+      if (res.data && res.data.success) {
+        // 1. Get the main data object (which contains token and user)
+        const resData = res.data.data || {};
+
+        // 2. Extract the role from the nested user object inside resData
+        const role = resData.user?.role; // Changed from userRole to role based on standard MERN patterns
+
+        // 3. Extract the token
+        const token = resData.token;
+
+        console.log("Extracted values:", { role, token, resData });
+
+        // Store in localStorage
+        if (role) localStorage.setItem("role", role);
+        if (token) localStorage.setItem("token", token);
+
         setTimeout(() => {
-          window.dispatchEvent(new Event('storageAuthChanged'));
-          
-          // Navigate after event is dispatched
+          window.dispatchEvent(new Event("storageAuthChanged"));
+
+          // Navigation logic based on role
           if (role === "manage_bank") navigate("/manage-blood-bank");
           else if (role === "find_blood") navigate("/");
           else if (role === "admin") navigate("/admin/dashboard");
+          else navigate("/"); // Fallback
         }, 50);
 
         toast.success(isLogin ? "Welcome back!" : "Account created!");

@@ -9,6 +9,7 @@ const passport=require ("passport")
 const GoogleStrategy=require("passport-google-oauth20").Strategy
 const cookieParser=require("cookie-parser")
 const userModel = require("./models/user.model")
+const { errorMiddleware } = require("./middlewares/error.middleware")
 const app=express()
 connectDB()
 
@@ -66,4 +67,6 @@ app.use(express.urlencoded({extended:true}))
 app.use("/api/auth",authRoutes)
 app.use("/api/bloodbankowner",bloodBankOwnerRoutes)
 app.use("/api/admin",adminRoutes)
+
+app.use(errorMiddleware)
 module.exports=app
