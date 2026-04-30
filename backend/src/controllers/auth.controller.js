@@ -1,22 +1,18 @@
 const userModel = require("../models/user.model")
 const sendMail = require("../services/mail.service")
 const jwt = require("jsonwebtoken")
-const registerController = async (req, res) => {
+const customError = require("../utills/customError")
+const responseUtil = require("../utills/response.utill")
+const registerController = async (req, res, next) => {
     try {
         let { name, email, password, userRole } = req.body
-        if (!name || !email || !password || !userRole) return res.status(400).json({
-            message: "All fields are required"
-        })
+        if (!name || !email || !password || !userRole) throw new customError("All fields are required", 400)
         let existedUser = await userModel.findOne({ email })
-        if (existedUser) return res.status(401).json({
-            message: "user already exists"
-        })
+        if (existedUser) throw new customError("user already exists", 409)
         let newUser = await userModel.create({
             name, email, password, userRole
         })
-        if (!newUser) return res.status(400).json({
-            message: "Something went wrong"
-        })
+        if (!newUser) throw new customError("Something went wrong", 400)
         let token = newUser.generateToken()
         //verify email
         const mailUrl = `http://localhost:3000/api/auth/verify-email/${token}`
@@ -32,33 +28,23 @@ const registerController = async (req, res) => {
             sameSite: "none",  // Cross-site requests ke liye zaroori hai
             maxAge: 24 * 60 * 60 * 1000
         })
-        return res.status(201).json({
-            success: true,
-            message: "email verification link sent to your account",
-            token: token,
-            newUser,
-        })
+        return responseUtil.created(
+            res,
+            { token, newUser },
+            "email verification link sent to your account",
+        )
     } catch (error) {
-        console.log("error is-->", error)
-        return res.status(500).json({
-            message: "Internal server error",
-            success: false,
-            error
-        })
+        return next(error)
     }
 
 }
 
-const verifyEmailController = async (req, res) => {
+const verifyEmailController = async (req, res, next) => {
     try {
         let token = req.params.token
-        if (!token) return res.status(401).json({
-            message: "token not found"
-        })
+        if (!token) throw new customError("token not found", 401)
         let decode = jwt.verify(token, process.env.JWT_TOKEN)
-        if (!decode) return res.status(401).json({
-            message: "invalid token"
-        })
+        if (!decode) throw new customError("invalid token", 401)
         //aapko isverified ko true krna hai ab to decode se aap user nikal lo id ka use karke or isverified ko true krdo then open login step
         let updatedUser = await userModel.findByIdAndUpdate(
             decode.id,
@@ -69,37 +55,24 @@ const verifyEmailController = async (req, res) => {
         //isse mongo me change ho jayegaa or isverified true ho jayega
         return res.render("verifyEmail")
     } catch (error) {
-        console.log("error", error)
-        return res.status(500).json({
-            message: "Internal server error",
-            success: false,
-            error
-        })
+        return next(error)
     }
 }
 
-const loginController = async (req, res) => {
+const loginController = async (req, res, next) => {
     try {
         let { email, password } = req.body
-        if (!email || !password) return res.status(400).json({
-            message: "All fields are required"
-        })
+        if (!email || !password) throw new customError("All fields are required", 400)
         //yaha par user exist karta hoga to aa jayega
         let existedUser = await userModel.findOne({ email })
-        if (!existedUser) return res.status(401).json({
-            message: "user does not exists"
-        })
+        if (!existedUser) throw new customError("user does not exists", 404)
 
-        if (!existedUser.isVerified) return res.status(401).json({
-            message: "verify first from your email"
-        })
+        if (!existedUser.isVerified) throw new customError("verify first from your email", 401)
         // bcrypt.compare ek asynchronous function hai jo Promise return karta hai. Agar aap await nahi lagayenge, toh checkPass hamesha
         //  ek "Pending Promise" rahega. JavaScript mein ek Promise object hamesha truthy mana jata hai, isliye aapki if (!checkPass) wali 
         // condition kabhi trigger hi nahi hoti.
         let checkPass = await existedUser.comparePassword(password)
-        if (!checkPass) return res.status(404).json({
-            message: "invalid email or password"
-        })
+        if (!checkPass) throw new customError("invalid email or password", 401)
         let token = existedUser.generateToken()
         res.cookie("token", token, {
             httpOnly: true,
@@ -107,64 +80,43 @@ const loginController = async (req, res) => {
             sameSite: "none",  // Cross-site requests ke liye zaroori hai
             maxAge: 24 * 60 * 60 * 1000
         })
-        return res.status(201).json({
-            success: true,
-            message: "user loggedIn successfully",
-            token: token,
-            user: existedUser
-        })
+        return responseUtil.success(
+            res,
+            { token, user: existedUser },
+            "user loggedIn successfully",
+        )
     } catch (error) {
-        console.log("error", error)
-        return res.status(500).json({
-            message: "Internal server error",
-            success: false,
-            error
-        })
+        return next(error)
     }
 }
 
-const logoutController = async (req, res) => {
+const logoutController = async (req, res, next) => {
     try {
         //yaha par user logggedin hona chahiye tabhi wo logout hoga iske liye middleware laga diya hai jisse login user ka data mil jayega req.id 
         // me or agar userID nhi aayegi to return kr dege aagyi to cookie clear kar dege
         let userID = req.user.id
-        if (!userID) return res.status(401).json({
-            message: "user id not found"
-        })
+        if (!userID) throw new customError("user id not found", 401)
         res.clearCookie("token")
-        return res.status(200).json({
-            message: "user logged out",
-            success: true
-        })
+        return responseUtil.success(res, {}, "user logged out")
     } catch (error) {
-        return res.status(500).json({
-            message: "Internal server error",
-            success: false,
-            error
-        })
+        return next(error)
     }
 }
 
-const forgetPasswordController = async (req, res) => {
+const forgetPasswordController = async (req, res, next) => {
     try {
         // Frontend se 'email' field hi aana chahiye
         let { email } = req.body;
 
         // Validation
         if (!email) {
-            return res.status(400).json({
-                message: "Email is required",
-                success: false
-            });
+            throw new customError("Email is required", 400);
         }
 
         // Check user in DB
         let existedUser = await userModel.findOne({ email });
         if (!existedUser) {
-            return res.status(404).json({
-                message: "User doesn't exist with this email",
-                success: false
-            });
+            throw new customError("User doesn't exist with this email", 404);
         }
 
         // Generate temporary token (valid for 10 mins)
@@ -191,73 +143,55 @@ const forgetPasswordController = async (req, res) => {
             </div>`
         );
 
-        return res.status(200).json({
-            message: "Reset link sent successfully to your email",
-            success: true
-        });
+        return responseUtil.success(res, {}, "Reset link sent successfully to your email");
 
     } catch (error) {
-        console.error("Forgot Password Error:", error);
-        return res.status(500).json({
-            message: "Internal Server Error",
-            success: false,
-            error: error.message
-        });
+        return next(error);
     }
 };
 
-const resetPasswordController = async (req, res) => {
+const resetPasswordController = async (req, res, next) => {
     try {
         const { token } = req.params;
 
         if (!token) {
-            return res.status(400).json({ success: false, message: "Token not found" });
+            throw new customError("Token not found", 400);
         }
 
         // Verify the token
         const decoded = jwt.verify(token, process.env.JWT_RAW_SECRET);
         
         // IMPORTANT: Send JSON, not res.render
-        return res.status(200).json({
-            success: true,
-            message: "Token is valid",
-            userID: decoded.id // React will use this for the next step
-        });
+        return responseUtil.success(
+            res,
+            { userID: decoded.id },
+            "Token is valid",
+        );
 
     } catch (error) {
-        return res.status(401).json({
-            success: false,
-            message: "Link expired or invalid",
-            error: error.message
-        });
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return next(new customError("Link expired or invalid", 401));
+        }
+        return next(error);
     }
 };
 
-const updatePasswordController = async (req, res) => {
+const updatePasswordController = async (req, res, next) => {
     try {
         const { userID } = req.params;
         const { password } = req.body;
 
         if (!userID) {
-            return res.status(400).json({
-                success: false,
-                message: "User context missing"
-            });
+            throw new customError("User context missing", 400);
         }
 
         if (!password) {
-            return res.status(400).json({
-                success: false,
-                message: "New password is required"
-            });
+            throw new customError("New password is required", 400);
         }
 
         const user = await userModel.findById(userID);
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
+            throw new customError("User not found", 404);
         }
 
         // Directly assigning will trigger your 'pre-save' hook 
@@ -265,18 +199,14 @@ const updatePasswordController = async (req, res) => {
         user.password = password;
         await user.save();
 
-        return res.status(200).json({
-            success: true,
-            message: "Password updated successfully. You can now login.",
-        });
+        return responseUtil.success(
+            res,
+            {},
+            "Password updated successfully. You can now login.",
+        );
 
     } catch (error) {
-        console.error("Update Password Error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update password",
-            error: error.message
-        });
+        return next(error);
     }
 };
 module.exports = { registerController, loginController, logoutController, verifyEmailController, forgetPasswordController, resetPasswordController, updatePasswordController }

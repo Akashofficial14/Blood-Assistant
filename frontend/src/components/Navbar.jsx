@@ -99,8 +99,7 @@ const Navbar = () => {
       {/* Nav Links */}
       <div className="navcenter flex gap-8 text-md font-medium text-gray-600">
         <NavLink className={navLinkClasses} to={"/"}>Home</NavLink>
-        <NavLink className={navLinkClasses} to={"/findBlood"}>Find Blood</NavLink>
-        <NavLink className={`${navLinkClasses} text-red-500`} to={"/bloodBanks"}>Blood Banks</NavLink>
+        <NavLink className={`${navLinkClasses} font-small text-lg`} to={"/bloodBanks"}>Find Blood Banks Nearby</NavLink>
         <NavLink className={navLinkClasses} to={"/donateBlood"}>Donate Blood</NavLink>
         <NavLink className={navLinkClasses} to={"/about"}>About Us</NavLink>
       </div>

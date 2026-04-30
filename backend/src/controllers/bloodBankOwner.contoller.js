@@ -1,26 +1,24 @@
 const bloodBankModel = require("../models/bloodbank.model");
 const userModel = require("../models/user.model");
 const sendMail = require("../services/mail.service");
+const customError = require("../utills/customError");
+const responseUtil = require("../utills/response.utill");
 
 // Register Blood Bank
-const bloodBankRegistrationController = async (req, res) => {
+const bloodBankRegistrationController = async (req, res, next) => {
     try {
         const ownerId = req.user._id;
         
         // Check if user role is 'manage_bank'
         const owner = await userModel.findById(ownerId);
         if (!owner || owner.userRole !== 'manage_bank') {
-            return res.status(403).json({
-                message: "Only bank managers can register a blood bank"
-            });
+            throw new customError("Only bank managers can register a blood bank", 403);
         }
 
         // Check if owner already has a blood bank
         const existingBloodBank = await bloodBankModel.findOne({ owner: ownerId });
         if (existingBloodBank) {
-            return res.status(400).json({
-                message: "You already have a registered blood bank"
-            });
+            throw new customError("You already have a registered blood bank", 400);
         }
 
         // Destructure input
@@ -35,27 +33,19 @@ const bloodBankRegistrationController = async (req, res) => {
 
         // Validation
         if (!name || !organizationType || !registrationDetails || !contact || !address) {
-            return res.status(400).json({
-                message: "All required fields must be provided"
-            });
+            throw new customError("All required fields must be provided", 400);
         }
 
         if (!registrationDetails.licenseNumber || !registrationDetails.licenseValidity || !registrationDetails.licenseDocUrl) {
-            return res.status(400).json({
-                message: "License details are required for verification"
-            });
+            throw new customError("License details are required for verification", 400);
         }
 
         if (!contact.email || !contact.phone) {
-            return res.status(400).json({
-                message: "Contact email and phone are required"
-            });
+            throw new customError("Contact email and phone are required", 400);
         }
 
         if (!address.city || !address.state || !address.zipCode) {
-            return res.status(400).json({
-                message: "Complete address is required"
-            });
+            throw new customError("Complete address is required", 400);
         }
 
         // Check if license number is unique
@@ -63,9 +53,7 @@ const bloodBankRegistrationController = async (req, res) => {
             "registrationDetails.licenseNumber": registrationDetails.licenseNumber
         });
         if (licenseExists) {
-            return res.status(400).json({
-                message: "This license number is already registered"
-            });
+            throw new customError("This license number is already registered", 400);
         }
 
         // Check if email is unique
@@ -73,9 +61,7 @@ const bloodBankRegistrationController = async (req, res) => {
             "contact.email": contact.email
         });
         if (emailExists) {
-            return res.status(400).json({
-                message: "This email is already registered with another blood bank"
-            });
+            throw new customError("This email is already registered with another blood bank", 400);
         }
 
         // Create blood bank
@@ -103,9 +89,7 @@ const bloodBankRegistrationController = async (req, res) => {
         });
 
         if (!newBloodBank) {
-            return res.status(400).json({
-                message: "Failed to create blood bank"
-            });
+            throw new customError("Failed to create blood bank", 400);
         }
 
         // Update user ownership status
@@ -132,66 +116,47 @@ const bloodBankRegistrationController = async (req, res) => {
         
         await sendMail(contact.email, "Blood Bank Registration Submitted", ownerMailContent);
 
-        return res.status(201).json({
-            success: true,
-            message: "Blood bank registered successfully. Awaiting admin verification.",
-            bloodBank: newBloodBank
-        });
+        return responseUtil.created(
+            res,
+            { bloodBank: newBloodBank },
+            "Blood bank registered successfully. Awaiting admin verification.",
+        );
 
     } catch (error) {
-        console.error("Error registering blood bank:", error);
-        res.status(500).json({
-            message: "Internal server error",
-            success: false,
-            error
-        });
+        return next(error);
     }
 };
 
 // Get Blood Bank by Owner
-const getBloodBankController = async (req, res) => {
+const getBloodBankController = async (req, res, next) => {
     try {
         const ownerId = req.user._id;
         const bloodBank = await bloodBankModel.findOne({ owner: ownerId }).populate('owner', 'name email');
         
         if (!bloodBank) {
-            return res.status(404).json({
-                message: "Blood bank not found"
-            });
+            throw new customError("Blood bank not found", 404);
         }
 
-        return res.status(200).json({
-            success: true,
-            bloodBank
-        });
+        return responseUtil.success(res, { bloodBank }, "Blood bank fetched successfully");
     } catch (error) {
-        console.error("Error fetching blood bank:", error);
-        res.status(500).json({
-            message: "Internal server error",
-            success: false,
-            error
-        });
+        return next(error);
     }
 };
 
 // Update Blood Bank (owner can update stock and details)
-const updateBloodBankController = async (req, res) => {
+const updateBloodBankController = async (req, res, next) => {
     try {
         const ownerId = req.user._id;
         const { bloodAvailability, contact, address, isOpen247 } = req.body;
 
         const bloodBank = await bloodBankModel.findOne({ owner: ownerId });
         if (!bloodBank) {
-            return res.status(404).json({
-                message: "Blood bank not found"
-            });
+            throw new customError("Blood bank not found", 404);
         }
 
         // Check if verified before allowing updates
         if (bloodBank.verificationStatus.status !== 'verified') {
-            return res.status(403).json({
-                message: "Can only update after admin verification"
-            });
+            throw new customError("Can only update after admin verification", 403);
         }
 
         // Update allowed fields
@@ -202,18 +167,13 @@ const updateBloodBankController = async (req, res) => {
 
         const updatedBloodBank = await bloodBank.save();
 
-        return res.status(200).json({
-            success: true,
-            message: "Blood bank updated successfully",
-            bloodBank: updatedBloodBank
-        });
+        return responseUtil.updated(
+            res,
+            { bloodBank: updatedBloodBank },
+            "Blood bank updated successfully",
+        );
     } catch (error) {
-        console.error("Error updating blood bank:", error);
-        res.status(500).json({
-            message: "Internal server error",
-            success: false,
-            error
-        });
+        return next(error);
     }
 };
 

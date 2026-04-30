@@ -1,8 +1,10 @@
 const bloodbankModel = require("../models/bloodbank.model");
 const userModel = require("../models/user.model");
+const customError = require("../utills/customError");
+const responseUtil = require("../utills/response.utill");
 
 // Route: PATCH /api/admin/verify-bank/:bankId
-const verifyBank = async (req, res) => {
+const verifyBank = async (req, res, next) => {
     try {
         // 1. Update the Blood Bank Status
         const updatedBank = await bloodbankModel.findByIdAndUpdate(
@@ -10,6 +12,9 @@ const verifyBank = async (req, res) => {
             { "verificationStatus.status": "verified", "verificationStatus.verifiedAt": Date.now() },
             { new: true }
         );
+        if (!updatedBank) {
+            throw new customError("Blood bank not found", 404);
+        }
 
         // 2. Update the Owner (User) Link and Status
         await userModel.findByIdAndUpdate(updatedBank.owner, {
@@ -18,9 +23,9 @@ const verifyBank = async (req, res) => {
             "ownershipStatus.approvedAt": Date.now()
         });
 
-        res.status(200).json({ message: "Bank and User updated successfully!" });
+        return responseUtil.updated(res, { bank: updatedBank }, "Bank and User updated successfully!");
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return next(error);
     }
 };
 
