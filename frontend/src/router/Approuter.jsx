@@ -7,7 +7,6 @@ import Home from "../pages/Home";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import OwnerDashboard from "../pages/owner/OwnerDashboard";
 import ProtectedRoute from "../components/ProtectdRoute";
-import FindBlood from "../pages/user/Findblood";
 import DonateBlood from "../pages/user/DonatebBlood";
 import BloodBanks from "../pages/user/BloodBanksNearby";
 import About from "../pages/user/About";
@@ -23,10 +22,6 @@ const Approuter = () => {
         {
           index: true, // This makes Home the default view for "/"
           element: <Home />,
-        },
-        {
-          path: "/findBlood",
-          element: <FindBlood />,
         },
         {
           path: "/donateBlood",

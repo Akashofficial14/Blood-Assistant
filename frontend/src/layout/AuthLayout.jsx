@@ -35,7 +35,7 @@ const AuthLayout = () => {
         const resData = res.data.data || {};
 
         // 2. Extract the role from the nested user object inside resData
-        const role = resData.user?.role; // Changed from userRole to role based on standard MERN patterns
+        const role = resData.user?.userRole; // Changed from userRole to role based on standard MERN patterns
 
         // 3. Extract the token
         const token = resData.token;
