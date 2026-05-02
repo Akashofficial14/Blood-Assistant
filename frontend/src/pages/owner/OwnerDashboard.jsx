@@ -4,6 +4,9 @@ import Inventory from "./features/Inventory";
 import Requests from "./features/Requests";
 import Staff from "./features/Staff";
 import BloodBankProfile from "./features/BloodBankProfile";
+import { LogOut } from "lucide-react";
+import { useNavigate } from "react-router";
+import axios from "axios";
 
 const SidebarItem = ({ label, icon, active, onClick }) => (
   <div
@@ -33,6 +36,7 @@ const MobileItem = ({ icon, label, active, onClick }) => (
 
 const OwnerDashboard = () => {
   const [activeItem, setActiveItem] = useState("Dashboard");
+  const navigate = useNavigate();
 
   const menuItems = [
     { name: "Dashboard" },
@@ -41,6 +45,36 @@ const OwnerDashboard = () => {
     // { name: "Staff" },
     { name: "Profile" },
   ];
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      // 1. Optional: Call your backend to invalidate the session
+      let res = await axios.post(
+        "http://localhost:3000/api/auth/logout",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
+      );
+      console.log("Logout response:", res.data);
+      // 2. Clear all local storage data
+      localStorage.clear();
+
+      // 3. Notify the app that authentication state has changed
+      window.dispatchEvent(new Event("storageAuthChanged"));
+
+      // 4. Redirect the user to the login page
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if the API fails, we clear local data and redirect
+      localStorage.clear();
+      window.dispatchEvent(new Event("storageAuthChanged"));
+      navigate("/login");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f7f9fb] font-sans antialiased text-slate-900">
@@ -80,6 +114,19 @@ const OwnerDashboard = () => {
               />
             ))}
           </nav>
+
+          <div className="pt-6 border-t border-slate-100 mt-auto">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center cursor-pointer gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all font-bold group"
+            >
+              <LogOut
+                className="group-hover:-translate-x-1 transition-transform"
+                size={20}
+              />
+              <span className="text-sm">Sign Out</span>
+            </button>
+          </div>
         </aside>
 
         {activeItem === "Dashboard" && <Dashboard />}
@@ -99,6 +146,13 @@ const OwnerDashboard = () => {
             onClick={() => setActiveItem(item.name)}
           />
         ))}
+        <button
+          onClick={handleLogout}
+          className="cursor-pointer flex flex-col items-center gap-1 text-slate-400"
+        >
+          <LogOut size={20} />
+          <span className="text-[10px] uppercase font-bold">Exit</span>
+        </button>
       </nav>
     </div>
   );
