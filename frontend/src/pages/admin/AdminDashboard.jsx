@@ -145,7 +145,7 @@ const FacilityDashboard = () => {
         <span className="text-2xl font-black tracking-tighter text-red-600">
           Blood Assistant
         </span>
-        <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-red-600 to-orange-400 border border-slate-300" />
+        <div className="h-10 w-10 rounded-full bg-linear-to-tr from-red-600 to-orange-400 border border-slate-300" />
       </header>
 
       <div className="flex pt-16">
