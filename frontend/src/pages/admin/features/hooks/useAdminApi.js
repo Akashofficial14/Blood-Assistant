@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { changePassword, getAdminProfileData, updateProfile } from "../../../../api/admin/getProfile";
+import { changePassword, getAdminProfileData, getAllUsers, updateProfile } from "../../../../api/admin/getProfile";
 import { toast } from "react-toastify";
 export const getAdminProfile =() => {
     return useQuery({
@@ -54,5 +54,12 @@ export const useChangePassword = () => {
       const errorMsg = error.response?.data?.message || "Failed to update password";
       toast.error(errorMsg);
     },
+  });
+};
+
+export const useGetAllUsers = () => {
+  return useQuery({
+    queryKey: ["allUsers"],
+    queryFn: getAllUsers,
   });
 };

@@ -49,3 +49,24 @@ export const changePassword = async ({ userId, password }) => {
     console.log("Change Password API Response:", res.data); // Log the full response
     return res.data;
 };
+
+export const getAllUsers = async () => {
+    try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            throw new Error("No token found");
+        }
+
+        const response = await axiosInstance.get("/admin/users", {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        return response.data.data.users;
+        console.log("All Users API Response:", response.data); // Log the full response
+    } catch (error) {
+        console.error("Error fetching all users:", error);
+        throw error;
+    }
+};

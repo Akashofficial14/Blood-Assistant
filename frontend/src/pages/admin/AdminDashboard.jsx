@@ -6,6 +6,9 @@ import UserManagement from "./features/UserManagement";
 import Requests from "./features/Requests";
 import { toast } from "react-toastify";
 import { getAdminProfile } from "./features/hooks/useAdminApi";
+import { LogOut } from "lucide-react";
+import { useNavigate } from "react-router";
+import axios from "axios";
 
 // --- Sub-components ---
 
@@ -100,6 +103,8 @@ const FacilityDashboard = () => {
   // CORRECT: Hooks must be inside the component
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [searchTerm, setSearchTerm] = useState("");
+  let navigate = useNavigate();
+
   const [adminData, setAdminData] = useState({}); // Local state to hold user data
   const { data, isLoading, error } = getAdminProfile();
   console.log("Admin Profile Data from React Query:", data);
@@ -108,6 +113,36 @@ const FacilityDashboard = () => {
       setAdminData(data);
     }
   }, [data]);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      // 1. Optional: Call your backend to invalidate the session
+     let res= await axios.post(
+        "http://localhost:3000/api/auth/logout",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
+      );
+   console.log("Logout response:", res.data);
+      // 2. Clear all local storage data
+      localStorage.clear();
+
+      // 3. Notify the app that authentication state has changed
+      window.dispatchEvent(new Event("storageAuthChanged"));
+
+      // 4. Redirect the user to the login page
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if the API fails, we clear local data and redirect
+      localStorage.clear();
+      window.dispatchEvent(new Event("storageAuthChanged"));
+      navigate("/login");
+    }
+  };
 
   const menuItems = [
     { name: "Dashboard" },
@@ -146,17 +181,14 @@ const FacilityDashboard = () => {
       icon: "block",
     },
   ];
-
-  return (
+return (
     <div className="min-h-screen bg-[#f7f9fb] font-sans antialiased text-slate-900">
       {/* Header */}
       <header className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 h-16">
-        {/* Logo */}
         <span className="text-2xl font-black tracking-tighter text-red-600 cursor-pointer hover:opacity-80 transition-opacity">
           Blood Assistant
         </span>
 
-        {/* User Profile Avatar */}
         <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-red-600 to-orange-400 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden ring-2 ring-red-100">
           <h1 className="text-white font-bold text-lg uppercase leading-none select-none">
             {adminData?.name?.charAt(0) || "A"}
@@ -173,40 +205,50 @@ const FacilityDashboard = () => {
               <p className="text-sm text-slate-500">Admin Panel</p>
             </div>
           </div>
-          <nav className="space-y-1">
+
+          {/* Navigation Links - flex-1 allows this to grow and push the logout down */}
+          <nav className="space-y-1 flex-1">
             {menuItems.map((item) => (
               <SidebarItem
                 key={item.name}
                 label={item.name}
+                icon={item.icon}
                 active={activeItem === item.name}
                 onClick={() => setActiveItem(item.name)}
               />
             ))}
           </nav>
+
+          {/* Bottom Logout Section - INSIDE the aside with mt-auto */}
+          <div className="pt-6 border-t border-slate-100 mt-auto">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all font-bold group"
+            >
+              <LogOut
+                className="group-hover:-translate-x-1 transition-transform"
+                size={20}
+              />
+              <span className="text-sm">Sign Out</span>
+            </button>
+          </div>
         </aside>
 
-        {/* Main Content */}
-        {activeItem === "Dashboard" && (
-          <Dashboard
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            activeItem={activeItem}
-            setActiveItem={setActiveItem}
-            facilities={facilities}
-            FacilityCard={FacilityCard}
-          />
-        )}
-        {activeItem === "Blood Banks" && (
-          <BloodBanks searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-        )}
-        {activeItem === "Requests" && <Requests />}
-        {activeItem === "Profile" && <AdminProfile adminData={adminData} />}
-        {activeItem === "Users" && (
-          <UserManagement
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-          />
-        )}
+        {/* Main Content Area */}
+        <div className="flex-1 lg:min-h-[calc(100vh-64px)]">
+          {activeItem === "Dashboard" && (
+            <Dashboard
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              facilities={facilities}
+              FacilityCard={FacilityCard}
+            />
+          )}
+          {activeItem === "Blood Banks" && <BloodBanks searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
+          {activeItem === "Requests" && <Requests />}
+          {activeItem === "Profile" && <AdminProfile adminData={adminData} />}
+          {activeItem === "Users" && <UserManagement searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
+        </div>
       </div>
 
       {/* Mobile Nav */}
@@ -220,6 +262,11 @@ const FacilityDashboard = () => {
             onClick={() => setActiveItem(item.name)}
           />
         ))}
+        {/* Adding Logout to Mobile Nav for consistency */}
+        <button onClick={handleLogout} className="flex flex-col items-center gap-1 text-slate-400">
+          <LogOut size={20} />
+          <span className="text-[10px] uppercase font-bold">Exit</span>
+        </button>
       </nav>
     </div>
   );
