@@ -8,7 +8,7 @@ const Dashboard = ({searchTerm, setSearchTerm,activeItem, setActiveItem,faciliti
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{activeItem}</h1>
             <p className="text-slate-500 mt-1">
-              Viewing management for {activeItem.toLowerCase()}.
+              Viewing management for {activeItem?.toLowerCase()}.
             </p>
           </div>
           <div className="relative">
@@ -27,7 +27,7 @@ const Dashboard = ({searchTerm, setSearchTerm,activeItem, setActiveItem,faciliti
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {facilities
             .filter((f) =>
-              f.name.toLowerCase().includes(searchTerm.toLowerCase()),
+              f?.name?.toLowerCase().includes(searchTerm.toLowerCase()),
             )
             .map((facility, index) => (
               <FacilityCard key={index} {...facility} />
