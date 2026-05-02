@@ -75,7 +75,7 @@ const loginController = async (req, res, next) => {
         if (!checkPass) throw new customError("invalid email or password", 401)
         let token = existedUser.generateToken()
         res.cookie("token", token, {
-            httpOnly: true,
+            httpOnly: false,
             secure: true,      // Deployment par true hona chahiye (HTTPS)
             sameSite: "none",  // Cross-site requests ke liye zaroori hai
             maxAge: 24 * 60 * 60 * 1000
@@ -160,7 +160,7 @@ const resetPasswordController = async (req, res, next) => {
 
         // Verify the token
         const decoded = jwt.verify(token, process.env.JWT_RAW_SECRET);
-        
+
         // IMPORTANT: Send JSON, not res.render
         return responseUtil.success(
             res,
@@ -209,4 +209,37 @@ const updatePasswordController = async (req, res, next) => {
         return next(error);
     }
 };
-module.exports = { registerController, loginController, logoutController, verifyEmailController, forgetPasswordController, resetPasswordController, updatePasswordController }
+
+const updateProfileController = async (req, res, next) => {
+    try {
+        const { userID } = req.params;
+        const { name, email } = req.body;
+        console.log('userID from params:', userID,name,email);
+
+        if (!userID) throw new customError("User ID is required", 400);
+        const loggedInUserId = req.user.id || req.user._id; // Depending on your token payload
+
+        if (loggedInUserId !== userID) {
+            throw new customError("Unauthorized: You cannot update someone else's profile", 401);
+        }
+
+        // Update the user and return the new document
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userID,
+            { name, email },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedUser) throw new customError("User not found", 404);
+
+        return responseUtil.success(
+            res,
+            updatedUser,
+            "Profile updated successfully"
+        );
+    } catch (error) {
+        return next(error);
+    }
+};
+
+module.exports = { registerController, loginController, logoutController, verifyEmailController, forgetPasswordController, resetPasswordController, updatePasswordController, updateProfileController }

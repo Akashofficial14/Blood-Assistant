@@ -97,7 +97,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
             <button
-              onClick={() => navigate("/findBlood")}
+              onClick={() => navigate("/bloodBanks")}
               className="animate-appear opacity-0 scale-90 group relative inline-flex items-center justify-center px-10 py-5 bg-red-600 text-white rounded-2xl font-black text-xl hover:bg-white hover:text-red-600 transition-all duration-500 shadow-2xl overflow-hidden"
             >
               <span className="relative z-10 uppercase tracking-widest">

@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Dashboard from "./features/Dashboard";
 import BloodBanks from "./features/BloodBanks";
 import AdminProfile from "./features/AdminProfile";
 import UserManagement from "./features/UserManagement";
 import Requests from "./features/Requests";
+import { toast } from "react-toastify";
+import { getAdminProfile } from "./features/hooks/useAdminApi";
 
 // --- Sub-components ---
 
@@ -92,20 +94,27 @@ const FacilityCard = ({
     </div>
   );
 };
-
 // --- Main Dashboard Component ---
 
 const FacilityDashboard = () => {
   // CORRECT: Hooks must be inside the component
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [searchTerm, setSearchTerm] = useState("");
+  const [adminData, setAdminData] = useState({}); // Local state to hold user data
+  const { data, isLoading, error } = getAdminProfile();
+  console.log("Admin Profile Data from React Query:", data);
+  useEffect(() => {
+    if (data) {
+      setAdminData(data);
+    }
+  }, [data]);
 
   const menuItems = [
     { name: "Dashboard" },
     { name: "Blood Banks" },
     { name: "Requests" },
     { name: "Users" },
-        { name: "Profile" },
+    { name: "Profile" },
   ];
 
   const facilities = [
@@ -142,7 +151,8 @@ const FacilityDashboard = () => {
     <div className="min-h-screen bg-[#f7f9fb] font-sans antialiased text-slate-900">
       {/* Header */}
       <header className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 h-16">
-        <span className="text-2xl font-black tracking-tighter text-red-600">
+        {/* Logo */}
+        <span className="text-2xl font-black tracking-tighter text-red-600 cursor-pointer hover:opacity-80 transition-opacity">
           Blood Assistant
         </span>
         <div className="h-10 w-10 rounded-full bg-linear-to-tr from-red-600 to-orange-400 border border-slate-300" />
@@ -184,14 +194,13 @@ const FacilityDashboard = () => {
           <BloodBanks searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         )}
         {activeItem === "Requests" && <Requests />}
-        {activeItem === "Profile" && <AdminProfile />}
+        {activeItem === "Profile" && <AdminProfile adminData={adminData} />}
         {activeItem === "Users" && (
           <UserManagement
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
           />
         )}
-
       </div>
 
       {/* Mobile Nav */}

@@ -17,7 +17,7 @@ const AuthLayout = () => {
     handleSubmit,
     reset,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm();
 
   const selectedRole = watch("userRole");
@@ -28,53 +28,54 @@ const AuthLayout = () => {
       : "http://localhost:3000/api/auth/register";
 
     try {
+      // 1. WIPE EVERYTHING before the new login attempt starts
+      localStorage.clear();
+
       const res = await axios.post(endpoint, data, { withCredentials: true });
 
       if (res.data && res.data.success) {
-        // 1. Get the main data object (which contains token and user)
         const resData = res.data.data || {};
-
-        // 2. Extract the role from the nested user object inside resData
-        const role = resData.user?.userRole; // Changed from userRole to role based on standard MERN patterns
-
-        // 3. Extract the token
+        const user = resData.user;
+        const role = user?.userRole;
         const token = resData.token;
 
-        console.log("Extracted values:", { role, token, resData });
-
-        // Store in localStorage
-        if (role) localStorage.setItem("role", role);
+        // 2. STORE NEW DATA
         if (token) localStorage.setItem("token", token);
+        if (role) localStorage.setItem("role", role);
+        if (user) localStorage.setItem("user", JSON.stringify(user));
+
+        // 3. SYNC & NAVIGATE
+        window.dispatchEvent(new Event("storageAuthChanged"));
 
         setTimeout(() => {
-          window.dispatchEvent(new Event("storageAuthChanged"));
-
-          // Navigation logic based on role
           if (role === "manage_bank") navigate("/manage-blood-bank");
-          else if (role === "find_blood") navigate("/");
           else if (role === "admin") navigate("/admin/dashboard");
-          else navigate("/"); // Fallback
-        }, 50);
+          else navigate("/");
+        }, 100);
 
         toast.success(isLogin ? "Welcome back!" : "Account created!");
       }
     } catch (error) {
+      // If login fails, keep it cleared so old data doesn't show up
+      localStorage.clear();
       toast.error(error.response?.data?.message || "Authentication failed");
     }
   };
-  const handleGoogleAuth = async () => {
+  const handleGoogleAuth = () => {
+
+    // Now proceed to Google Login
     window.location.href = "http://localhost:3000/api/auth/google";
   };
   const toggleMode = () => {
     setIsLogin(!isLogin);
-    reset();
+    reset({}, { keepErrors: false }); // Ensures error messages disappear when switching tabs
   };
 
   return (
     <>
       {" "}
-      <div className="min-h-screen w-full flex justify-center items-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl border border-gray-100">
+      <div className="w-full flex justify-center items-center bg-gray-50 p-3">
+        <div className="w-full max-w-md rounded-2xl bg-white px-8 py-8 shadow-2xl border border-gray-100">
           {/* Header Section */}
           <div className="text-center mb-6">
             <div className="flex justify-center mb-3">
@@ -92,7 +93,7 @@ const AuthLayout = () => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             {/* Role Selection (Registration Only) */}
             {!isLogin && (
               <div className="mb-4">
@@ -143,9 +144,22 @@ const AuthLayout = () => {
                   Full Name
                 </label>
                 <input
-                  {...register("name", { required: "Name is required" })}
-                  className={`mt-1 w-full rounded-xl border p-3 outline-none transition-all ${errors.name ? "border-red-500 focus:ring-red-100" : "border-gray-200 focus:ring-2 focus:ring-red-500"}`}
-                  placeholder="Akash Warade"
+                  {...register("name", {
+                    required: "Name is required",
+                    minLength: {
+                      value: 3,
+                      message: "Name must be at least 3 characters",
+                    },
+                    validate: (value) => {
+                      return !/\d/.test(value) || "Name cannot contain numbers";
+                    },
+                  })}
+                  className={`mt-1 w-full rounded-xl border p-3 outline-none transition-all ${
+                    errors.name
+                      ? "border-red-500 focus:ring-red-100"
+                      : "border-gray-200 focus:ring-2 focus:ring-red-500"
+                  }`}
+                  placeholder="John Doe"
                 />
                 {errors.name && (
                   <p className="text-[10px] text-red-500 mt-1 ml-1 font-medium">
@@ -164,12 +178,16 @@ const AuthLayout = () => {
                 {...register("email", {
                   required: "Email is required",
                   pattern: {
-                    value: /^\S+@\S+$/i,
-                    message: "Invalid email address",
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Invalid email address format",
                   },
                 })}
-                className={`mt-1 w-full rounded-xl border p-3 outline-none transition-all ${errors.email ? "border-red-500 focus:ring-red-100" : "border-gray-200 focus:ring-2 focus:ring-red-500"}`}
-                placeholder="akash@example.com"
+                className={`mt-1 w-full rounded-xl border p-3 outline-none transition-all ${
+                  errors.email
+                    ? "border-red-500 focus:ring-red-100"
+                    : "border-gray-200 focus:ring-2 focus:ring-red-500"
+                }`}
+                placeholder="abcd@example.com"
               />
               {errors.email && (
                 <p className="text-[10px] text-red-500 mt-1 ml-1 font-medium">
@@ -189,11 +207,21 @@ const AuthLayout = () => {
                   {...register("password", {
                     required: "Password is required",
                     minLength: {
-                      value: 6,
-                      message: "Password must be at least 6 characters",
+                      value: 8,
+                      message: "Password must be at least 8 characters",
+                    },
+                    pattern: {
+                      value:
+                        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                      message:
+                        "Must include uppercase, lowercase, number and symbol",
                     },
                   })}
-                  className={`w-full rounded-xl border p-3 pr-12 outline-none transition-all ${errors.password ? "border-red-500 focus:ring-red-100" : "border-gray-200 focus:ring-2 focus:ring-red-500"}`}
+                  className={`w-full rounded-xl border p-3 pr-12 outline-none transition-all ${
+                    errors.password
+                      ? "border-red-500 focus:ring-red-100"
+                      : "border-gray-200 focus:ring-2 focus:ring-red-500"
+                  }`}
                   placeholder="••••••••"
                 />
                 <button
@@ -204,7 +232,6 @@ const AuthLayout = () => {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {/* THIS IS THE MESSAGE YOU REQUESTED */}
               {errors.password && (
                 <p className="text-[10px] text-red-500 mt-1 ml-1 font-medium">
                   {errors.password.message}
@@ -237,13 +264,28 @@ const AuthLayout = () => {
 
             <button
               type="submit"
-              className="w-full rounded-xl bg-red-600 py-3.5 font-bold text-white shadow-lg shadow-red-100 hover:bg-red-700 transition-all active:scale-[0.98] mt-2"
+              disabled={isSubmitting}
+              className={`w-full rounded-xl py-3.5 font-bold text-white shadow-lg transition-all mt-2 flex items-center justify-center gap-2 ${
+                isSubmitting
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-red-600 hover:bg-red-700 shadow-red-100 active:scale-[0.98]"
+              }`}
             >
-              {isLogin ? "Sign In" : "Get Started"}
+              {isSubmitting ? (
+                <>
+                  {/* Optional: Simple CSS Spinner */}
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  {isLogin ? "Logging in..." : "Registering..."}
+                </>
+              ) : isLogin ? (
+                "Sign In"
+              ) : (
+                "Get Started"
+              )}
             </button>
 
             {/* Social Divider */}
-            <div className="relative my-6">
+            <div className="relative my-3">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-gray-100"></span>
               </div>
@@ -269,13 +311,13 @@ const AuthLayout = () => {
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-gray-500">
             {isLogin ? "Don't have an account?" : "Already a member?"}{" "}
             <button
               onClick={toggleMode}
               className="font-bold text-red-600 hover:underline"
             >
-              {isLogin ? "Create account" : "Sign in here"}
+              {isLogin ? "Sign Up" : "Sign In"}
             </button>
           </p>
         </div>

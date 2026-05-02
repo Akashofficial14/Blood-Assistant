@@ -29,4 +29,47 @@ const verifyBank = async (req, res, next) => {
     }
 };
 
-module.exports={verifyBank}
+const getProfileController = async (req, res, next) => {
+    try {
+        // req.user._id is populated by your protect/auth middleware
+        const userId = req.user?._id;
+
+        if (!userId) {
+            throw new customError("Unauthorized: No user ID found", 401);
+        }
+
+        // Fetch the user from DB (excluding sensitive fields like password)
+        const user = await userModel.findById(userId).select("-password");
+
+        if (!user) {
+            throw new customError("User not found", 404);
+        }
+
+        // Using your response utility to return the data
+        return responseUtil.success(
+            res,
+            { user },
+            "User profile fetched successfully"
+        );
+    } catch (error) {
+        // Pass error to your global error handler
+        return next(error);
+    }
+};
+const getAllUsers = async (req, res, next) => {
+    try {
+        // Filter directly in the query: find users where isVerified is true
+        const users = await userModel.find({ isVerified: true }).select("-password");
+
+        // Check if the array is empty
+        if (!users || users.length === 0) {
+            throw new customError("No verified users found", 404);
+        }
+
+        return responseUtil.success(res, { users }, "Verified users fetched successfully");
+    } catch (error) {
+        return next(error);
+    }
+};
+
+module.exports = { verifyBank, getProfileController, getAllUsers }

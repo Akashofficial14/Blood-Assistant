@@ -26,6 +26,7 @@ const Navbar = () => {
         });
         if (res.data?.user) {
           setUser(res.data.user); // Save user info (name, email, etc.)
+          localStorage.setItem("user", JSON.stringify(res.data.user)); // Ensure user is stored
         }
       } catch (error) {
         console.error("Auth Error:", error);
@@ -79,47 +80,53 @@ const Navbar = () => {
     };
   }, []);
 
-  const navLinkClasses =
-    "transition-all duration-300 ease-in-out hover:text-red-500 hover:-translate-y-0.5 active:scale-95";
+// 1. Move your base styles to a variable
+const baseClasses = "pb-1 transition-all duration-300 ease-in-out hover:text-red-500 hover:-translate-y-0.5 active:scale-95";
 
-  return (
-    <nav className="h-20 w-full flex justify-between items-center px-10 bg-white border-b border-gray-100">
-      {/* Logo Section */}
-      <div className="navleft flex justify-center items-center gap-3 cursor-pointer group transition-transform duration-300 hover:scale-105">
-        <div className="bg-red-500 p-2 rounded-full transition-transform duration-500 group-hover:rotate-12">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-droplet h-6 w-6 text-white">
-            <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path>
-          </svg>
-        </div>
-        <h3 className="text-2xl font-black tracking-tighter">
-          Blood <span className="text-red-600">Assistant.</span>
-        </h3>
-      </div>
+// 2. Create a function to handle dynamic classes
+const getNavLinkClass = ({ isActive }) => 
+  isActive 
+    ? `${baseClasses} text-red-600 border-b-2 border-red-600` 
+    : `${baseClasses} text-gray-600 border-b-2 border-transparent`;
 
-      {/* Nav Links */}
-      <div className="navcenter flex gap-8 text-md font-medium text-gray-600">
-        <NavLink className={navLinkClasses} to={"/"}>Home</NavLink>
-        <NavLink className={`${navLinkClasses} font-small text-lg`} to={"/bloodBanks"}>Find Blood Banks Nearby</NavLink>
-        <NavLink className={navLinkClasses} to={"/donateBlood"}>Donate Blood</NavLink>
-        <NavLink className={navLinkClasses} to={"/about"}>About Us</NavLink>
+return (
+  <nav className="h-20 w-full flex justify-between items-center px-10 bg-white border-b border-gray-100">
+    {/* Logo Section */}
+    <div className="navleft flex justify-center items-center gap-3 cursor-pointer group transition-transform duration-300 hover:scale-105">
+      <div className="bg-red-500 p-2 rounded-full transition-transform duration-500 group-hover:rotate-12">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-droplet h-6 w-6 text-white">
+          <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path>
+        </svg>
       </div>
+      <h3 className="text-2xl font-black tracking-tighter">
+        Blood <span className="text-red-600">Assistant.</span>
+      </h3>
+    </div>
 
-      {/* Login Section - Conditional Rendering */}
-      <div className="navright">
-        {isLoggedIn && user ? (
-          <Logout user={user} />
-        ) : (
-          <NavLink
-            to={"/login"}
-            className="flex gap-1 justify-center items-center bg-red-500 px-5 py-2 text-white rounded-full font-semibold transition-all duration-300 hover:bg-red-600 hover:scale-110 hover:shadow-lg active:scale-95"
-          >
-            <img className="w-5 invert" src="https://img.icons8.com/?size=100&id=15263&format=png&color=000000" alt="user icon" />
-            <span className="text-sm">Login</span>
-          </NavLink>
-        )}
-      </div>
-    </nav>
-  );
+    {/* Nav Links */}
+    <div className="navcenter flex gap-8 text-md font-medium">
+      <NavLink className={getNavLinkClass} to="/">Home</NavLink>
+      <NavLink className={getNavLinkClass} to="/bloodBanks">Find Blood Banks Nearby</NavLink>
+      <NavLink className={getNavLinkClass} to="/donateBlood">Donate Blood</NavLink>
+      <NavLink className={getNavLinkClass} to="/about">About Us</NavLink>
+    </div>
+
+    {/* Login Section */}
+    <div className="navright">
+      {isLoggedIn && user ? (
+        <Logout user={user} />
+      ) : (
+        <NavLink
+          to="/login"
+          className="flex gap-1 justify-center items-center bg-red-500 px-5 py-2 text-white rounded-full font-semibold transition-all duration-300 hover:bg-red-600 hover:scale-110 hover:shadow-lg active:scale-95"
+        >
+          <img className="w-5 invert" src="https://img.icons8.com/?size=100&id=15263&format=png&color=000000" alt="user icon" />
+          <span className="text-sm">Login</span>
+        </NavLink>
+      )}
+    </div>
+  </nav>
+);
 };
 
 export default Navbar;
