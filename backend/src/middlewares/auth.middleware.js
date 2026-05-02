@@ -2,10 +2,12 @@ const jwt=require("jsonwebtoken")
 const userModel = require("../models/user.model")
 const authMiddleware=async(req,res,next)=>{
     try {
+        console.log("Auth Middleware Invoked") // Debug log
         let token=req.cookies.token || (req.headers.authorization && req.headers.authorization.split(" ")[1])
         if(!token) return res.status(401).json({
             message:"token not found"
         })
+        console.log("Token received in auth middleware:", token); // Debug log
         
         let decode=jwt.verify(token,process.env.JWT_TOKEN)
         if(!decode) return res.status(401).json({

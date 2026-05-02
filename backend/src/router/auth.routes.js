@@ -1,6 +1,6 @@
 const express = require('express')
 const jwt=require('jsonwebtoken')
-const { registerController, loginController, logoutController, verifyEmailController, forgetPasswordController, resetPasswordController, updatePasswordController } = require('../controllers/auth.controller')
+const { registerController, loginController, logoutController, verifyEmailController, forgetPasswordController, resetPasswordController, updatePasswordController, updateProfileController } = require('../controllers/auth.controller')
 const authMiddleware = require('../middlewares/auth.middleware')
 const passport = require('passport')
 const router = express.Router()
@@ -12,6 +12,7 @@ router.get("/verify-email/:token", verifyEmailController)
 router.post("/forget-password", forgetPasswordController)
 router.get("/reset-password/:token", resetPasswordController)
 router.post("/update-password/:userID", updatePasswordController)
+router.put("/update-profile/:userID", authMiddleware, updateProfileController);
 
 //Google-auth
 router.get("/google", passport.authenticate("google", { scope: ['profile', 'email'], prompt: "select_account" }))
