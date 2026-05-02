@@ -33,7 +33,7 @@ const Dashboard = ({searchTerm, setSearchTerm,activeItem, setActiveItem,faciliti
               <FacilityCard key={index} {...facility} />
             ))}
 
-          <button className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 p-6 flex flex-col items-center justify-center gap-3 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all min-h-[300px] group">
+          <button className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 p-6 flex flex-col items-center justify-center gap-3 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all min-h-75 group">
             <span className="material-symbols-outlined text-4xl group-hover:scale-110 transition-transform">
               add_circle
             </span>

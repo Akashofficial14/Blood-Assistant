@@ -38,7 +38,7 @@ const OwnerDashboard = () => {
     { name: "Dashboard" },
     { name: "Inventory" },
     { name: "Requests" },
-    { name: "Staff" },
+    // { name: "Staff" },
     { name: "Profile" },
   ];
 
@@ -85,7 +85,7 @@ const OwnerDashboard = () => {
         {activeItem === "Dashboard" && <Dashboard />}
         {activeItem === "Inventory" && <Inventory />}
         {activeItem === "Requests" && <Requests />}
-        {activeItem === "Staff" && <Staff />}
+        {/* {activeItem === "Staff" && <Staff />} */}
         {activeItem === "Profile" && <BloodBankProfile />}
       </div>
 
