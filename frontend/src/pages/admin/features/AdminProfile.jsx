@@ -19,11 +19,9 @@ const AdminProfile = ({ adminData }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showPass, setShowPass] = useState(false);
 
-  // --- Mutations ---
   const { mutate: changePassword, isPending: isChangingPassword } = useChangePassword();
   const { mutate: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile();
 
-  // Form for Password Change
   const {
     register,
     handleSubmit,
@@ -32,7 +30,6 @@ const AdminProfile = ({ adminData }) => {
     formState: { errors },
   } = useForm();
 
-  // Form for Profile Update (Name/Email)
   const {
     register: registerProfile,
     handleSubmit: handleProfileSubmit,
@@ -40,17 +37,10 @@ const AdminProfile = ({ adminData }) => {
 
   const newPassword = watch("password");
 
-  // --- Submit Handlers ---
-
   const onProfileUpdate = (data) => {
-    // Pass the userId and the updated data to the mutation
     updateProfile(
       { userId: adminData._id, data },
-      {
-        onSuccess: () => {
-          setIsEditMode(false);
-        },
-      }
+      { onSuccess: () => setIsEditMode(false) }
     );
   };
 
@@ -60,25 +50,23 @@ const AdminProfile = ({ adminData }) => {
       {
         onSuccess: () => {
           setIsModalOpen(false);
-          reset(); // Clear the password form
+          reset();
         },
       }
     );
   };
 
   const getInitials = (name) =>
-    name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase() || "U";
+    name?.split(" ").map((n) => n[0]).join("").toUpperCase() || "U";
 
   return (
-    <main className="flex-1 lg:ml-72 p-6 md:p-10 bg-gray-50 min-h-screen font-sans">
+    /* FIXED: Adjusted margin to lg:ml-72 (standard sidebar) and removed ml-37 */
+    <main className="flex-1 lg:ml-72 p-4 md:p-10 bg-gray-50 min-h-screen font-sans">
       <div className="max-w-5xl mx-auto">
-        <header className="mb-10 flex justify-between items-end">
+        {/* FIXED: Added flex-col for mobile and items-start for better alignment */}
+        <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
               Account Settings
             </h1>
             <p className="text-gray-500 mt-1">Manage your identity and security</p>
@@ -86,14 +74,14 @@ const AdminProfile = ({ adminData }) => {
           {!isEditMode ? (
             <button
               onClick={() => setIsEditMode(true)}
-              className="flex items-center gap-2 bg-white border border-gray-200 px-5 py-2.5 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 shadow-sm transition-all"
+              className="flex items-center gap-2 bg-white border border-gray-200 px-5 py-2.5 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 shadow-sm transition-all w-full sm:w-auto justify-center"
             >
               <Edit3 size={16} /> Edit Profile
             </button>
           ) : (
             <button
               onClick={() => setIsEditMode(false)}
-              className="px-5 py-2.5 font-bold text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all"
+              className="px-5 py-2.5 font-bold text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all w-full sm:w-auto text-center"
             >
               Cancel
             </button>
@@ -103,11 +91,12 @@ const AdminProfile = ({ adminData }) => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Profile Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center sticky top-10">
-              <div className="w-28 h-28 bg-gradient-to-tr from-red-600 to-red-500 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-4xl font-black shadow-xl ring-4 ring-red-50 ring-offset-2">
+            {/* FIXED: Removed sticky top-10 for mobile to prevent layout jumps */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center lg:sticky lg:top-10">
+              <div className="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-tr from-red-600 to-red-500 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-3xl md:text-4xl font-black shadow-xl ring-4 ring-red-50 ring-offset-2">
                 {getInitials(adminData?.name)}
               </div>
-              <h3 className="font-bold text-2xl text-gray-800">{adminData?.name}</h3>
+              <h3 className="font-bold text-2xl text-gray-800 truncate">{adminData?.name}</h3>
               <p className="text-red-600 font-bold text-xs uppercase tracking-widest mt-1">
                 System Administrator
               </p>
@@ -127,7 +116,7 @@ const AdminProfile = ({ adminData }) => {
           <div className="lg:col-span-2">
             <form
               onSubmit={handleProfileSubmit(onProfileUpdate)}
-              className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100"
+              className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100"
             >
               <div className="flex items-center gap-3 mb-8">
                 <div className="p-2 bg-red-50 rounded-lg text-red-600">
@@ -196,7 +185,7 @@ const AdminProfile = ({ adminData }) => {
                   <button
                     type="submit"
                     disabled={isUpdatingProfile}
-                    className="bg-red-600 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-red-100 hover:bg-red-700 transition-all active:scale-[0.98] flex items-center gap-2"
+                    className="w-full sm:w-auto bg-red-600 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-red-100 hover:bg-red-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     {isUpdatingProfile ? (
                       <Loader2 className="animate-spin" size={18} />
@@ -217,7 +206,7 @@ const AdminProfile = ({ adminData }) => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h2 className="font-black text-gray-800 uppercase tracking-tight">
+              <h2 className="font-black text-gray-800 uppercase tracking-tight text-sm">
                 Security Update
               </h2>
               <button
@@ -227,7 +216,7 @@ const AdminProfile = ({ adminData }) => {
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSubmit(onPasswordChange)} className="p-8 space-y-5">
+            <form onSubmit={handleSubmit(onPasswordChange)} className="p-6 md:p-8 space-y-5">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                   New Password
@@ -243,7 +232,7 @@ const AdminProfile = ({ adminData }) => {
                       required: "Required",
                       minLength: { value: 8, message: "Min 8 chars" },
                     })}
-                    className="w-full pl-11 pr-12 p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none"
+                    className="w-full pl-11 pr-12 p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none text-sm"
                     placeholder="••••••••"
                   />
                   <button
@@ -276,7 +265,7 @@ const AdminProfile = ({ adminData }) => {
                       required: "Required",
                       validate: (val) => val === newPassword || "No match",
                     })}
-                    className="w-full pl-11 p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none"
+                    className="w-full pl-11 p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none text-sm"
                     placeholder="••••••••"
                   />
                 </div>
@@ -287,18 +276,18 @@ const AdminProfile = ({ adminData }) => {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-4 font-bold text-gray-500 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-all"
+                  className="order-2 sm:order-1 flex-1 py-3.5 font-bold text-gray-500 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isChangingPassword}
-                  className="flex-1 py-4 font-bold text-white bg-red-600 rounded-2xl shadow-lg hover:bg-red-700 transition-all disabled:bg-gray-400 flex justify-center items-center"
+                  className="order-1 sm:order-2 flex-1 py-3.5 font-bold text-white bg-red-600 rounded-2xl shadow-lg hover:bg-red-700 transition-all disabled:bg-gray-400 flex justify-center items-center"
                 >
                   {isChangingPassword ? <Loader2 className="animate-spin" /> : "Save Changes"}
                 </button>

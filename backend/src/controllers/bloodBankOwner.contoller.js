@@ -8,7 +8,7 @@ const responseUtil = require("../utills/response.utill");
 const bloodBankRegistrationController = async (req, res, next) => {
     try {
         const ownerId = req.user._id;
-        
+
         // Check if user role is 'manage_bank'
         const owner = await userModel.findById(ownerId);
         if (!owner || owner.userRole !== 'manage_bank') {
@@ -113,7 +113,7 @@ const bloodBankRegistrationController = async (req, res, next) => {
             <p>You will receive a confirmation email once the admin verifies your details.</p>
             <p>Thank you for registering with us!</p>
         `;
-        
+
         await sendMail(contact.email, "Blood Bank Registration Submitted", ownerMailContent);
 
         return responseUtil.created(
@@ -131,13 +131,25 @@ const bloodBankRegistrationController = async (req, res, next) => {
 const getBloodBankController = async (req, res, next) => {
     try {
         const ownerId = req.user._id;
-        const bloodBank = await bloodBankModel.findOne({ owner: ownerId }).populate('owner', 'name email');
-        
+        const bloodBank = await bloodBankModel.find();
+
         if (!bloodBank) {
             throw new customError("Blood bank not found", 404);
         }
 
         return responseUtil.success(res, { bloodBank }, "Blood bank fetched successfully");
+    } catch (error) {
+        return next(error);
+    }
+};
+
+const getAllVerifiedBloodBanksController = async (req, res, next) => {
+    try {
+        const bloodBanks = await bloodBankModel.find({ "verificationStatus.status": "verified" }).populate('owner', 'name email');
+        if (!bloodBanks || bloodBanks.length === 0) {
+            throw new customError("No verified blood banks found", 404);
+        }
+        return responseUtil.success(res, { bloodBanks }, "Verified blood banks fetched successfully");
     } catch (error) {
         return next(error);
     }
@@ -177,8 +189,32 @@ const updateBloodBankController = async (req, res, next) => {
     }
 };
 
+const deleteBloodBankController = async (req, res, next) => {
+    try {
+        // 1. Correctly identify the owner from the authenticated user
+        //frontend me delete request bhejte waqt bankId path parameter me bhejna hoga, jisse hum ye confirm kar sake ki jis bank ko delete karna chahte hai uska owner kaun hai
+        const ownerId = req.params.bankId
+        console.log("Delete Request for Bank ID:", ownerId);
+        // 2. Use findOneAndDelete to match the owner field
+        const deletedBank = await bloodBankModel.findByIdAndDelete(ownerId);
+
+        // 3. Check if the bank actually existed
+        if (!deletedBank) {
+            throw new customError("Blood bank not found or you are not authorized", 404);
+        }
+
+        // 4. Return success (No need for .remove() as findOneAndDelete already removed it)
+        return responseUtil.success(res, null, "Blood bank deleted successfully");
+    } catch (error) {
+        // Passes errors (like 404 customError) to your global error handler
+        return next(error);
+    }
+};
+
 module.exports = {
     bloodBankRegistrationController,
     getBloodBankController,
-    updateBloodBankController
+    updateBloodBankController,
+    getAllVerifiedBloodBanksController,
+    deleteBloodBankController
 }

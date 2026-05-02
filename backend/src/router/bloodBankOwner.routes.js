@@ -1,8 +1,10 @@
 const express=require('express')
-const { bloodBankRegistrationController ,getBloodBankController,updateBloodBankController} = require('../controllers/bloodBankOwner.contoller')
+const { bloodBankRegistrationController ,getBloodBankController,updateBloodBankController, getAllVerifiedBloodBanksController, deleteBloodBankController} = require('../controllers/bloodBankOwner.contoller')
 const authMiddleware = require('../middlewares/auth.middleware')
 const router=express.Router()
 router.post("/register", authMiddleware, bloodBankRegistrationController)
 router.get("/getbloodbank", authMiddleware, getBloodBankController)
 router.patch("/updatebloodbank", authMiddleware, updateBloodBankController)
+router.get("/get-verified-bloodbanks", authMiddleware, getAllVerifiedBloodBanksController)
+router.delete("/delete-bloodbank/:bankId", authMiddleware, deleteBloodBankController)
 module.exports=router
