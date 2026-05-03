@@ -7,7 +7,7 @@ const authMiddleware=async(req,res,next)=>{
         if(!token) return res.status(401).json({
             message:"token not found"
         })
-        console.log("Token received in auth middleware:", token); // Debug log
+        // console.log("Token received in auth middleware:", token); // Debug log
         
         let decode=jwt.verify(token,process.env.JWT_TOKEN)
         if(!decode) return res.status(401).json({

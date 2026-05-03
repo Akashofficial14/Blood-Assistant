@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { NavLink, Outlet, useNavigate } from "react-router";
 import { Eye, EyeOff, Droplet } from "lucide-react";
+import MultiStepForm from "../components/MultiStepForm";
+import { getBloodbankDetails } from "../api/blood bank/getBloodbankDetails";
 
 const AuthLayout = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -47,9 +49,17 @@ const AuthLayout = () => {
         // 3. SYNC & NAVIGATE
         window.dispatchEvent(new Event("storageAuthChanged"));
 
-        setTimeout(() => {
-          if (role === "manage_bank") navigate("/manage-blood-bank");
-          else if (role === "admin") navigate("/admin/dashboard");
+        setTimeout(async () => {
+          if (role === "manage_bank") {
+            const data = await getBloodbankDetails();
+            if (data) {
+              navigate("/manage-blood-bank");
+              return;
+            } else {
+              navigate("/bloodbank/details/form");
+              return;
+            }
+          } else if (role === "admin") navigate("/admin/dashboard");
           else navigate("/");
         }, 100);
 
@@ -62,7 +72,6 @@ const AuthLayout = () => {
     }
   };
   const handleGoogleAuth = () => {
-
     // Now proceed to Google Login
     window.location.href = "http://localhost:3000/api/auth/google";
   };
