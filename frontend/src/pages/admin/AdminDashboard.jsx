@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
 import Dashboard from "./features/Dashboard";
-import BloodBanks from "./features/BloodBanks";
 import AdminProfile from "./features/AdminProfile";
 import UserManagement from "./features/UserManagement";
 import Requests from "./features/Requests";
@@ -101,10 +100,16 @@ const FacilityCard = ({
 
 const FacilityDashboard = () => {
   // CORRECT: Hooks must be inside the component
-  const [activeItem, setActiveItem] = useState("Dashboard");
+  //refresh login for active tab in admin section
+  const [activeItem, setActiveItem] = useState(() => {
+    return localStorage.getItem("activeAdminTab") || "Dashboard";
+  });
+  useEffect(() => {
+    localStorage.setItem("activeAdminTab", activeItem);
+  }, [activeItem]);
+
   const [searchTerm, setSearchTerm] = useState("");
   let navigate = useNavigate();
-
   const [adminData, setAdminData] = useState({}); // Local state to hold user data
   const { data, isLoading, error } = getAdminProfile();
   console.log("Admin Profile Data from React Query:", data);
@@ -118,7 +123,7 @@ const FacilityDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       // 1. Optional: Call your backend to invalidate the session
-     let res= await axios.post(
+      let res = await axios.post(
         "http://localhost:3000/api/auth/logout",
         {},
         {
@@ -126,7 +131,7 @@ const FacilityDashboard = () => {
           withCredentials: true,
         },
       );
-   console.log("Logout response:", res.data);
+      console.log("Logout response:", res.data);
       // 2. Clear all local storage data
       localStorage.clear();
 
@@ -146,42 +151,12 @@ const FacilityDashboard = () => {
 
   const menuItems = [
     { name: "Dashboard" },
-    { name: "Blood Banks" },
     { name: "Requests" },
     { name: "Users" },
     { name: "Profile" },
   ];
 
-  const facilities = [
-    {
-      name: "St. Jude Regional Center",
-      address: "452 Medical Parkway",
-      capacity: "1,200",
-      staffCount: 24,
-      status: "pending",
-      type: "Trauma",
-      icon: "pending_actions",
-    },
-    {
-      name: "Metro General Blood Bank",
-      address: "12 Central Plaza",
-      capacity: "4,500",
-      staffCount: 82,
-      status: "active",
-      type: "Public",
-      icon: "local_hospital",
-    },
-    {
-      name: "Westside Community Bank",
-      address: "Abandoned Sector 7",
-      capacity: "0",
-      staffCount: 0,
-      status: "suspended",
-      type: "Private",
-      icon: "block",
-    },
-  ];
-return (
+  return (
     <div className="min-h-screen bg-[#f7f9fb] font-sans antialiased text-slate-900">
       {/* Header */}
       <header className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 h-16">
@@ -194,11 +169,13 @@ return (
       <div className="flex pt-16">
         {/* Desktop Sidebar */}
         <aside className="hidden lg:flex flex-col fixed left-0 top-16 h-[calc(100vh-64px)] w-72 bg-white border-r border-slate-200 p-4">
-          <div className="flex items-center gap-3 p-4 mb-6 bg-slate-50 rounded-xl">
-            <div>
-              <p className="text-lg font-bold">Akash</p>
-              <p className="text-sm text-slate-500">Admin Panel</p>
-            </div>
+          <div className="flex items-center justify-center flex-col gap-1 p-4 mb-6 bg-slate-50 rounded-xl">
+            <h3 className="font-bold text-2xl text-gray-800 truncate">
+              {adminData?.name}
+            </h3>
+            <p className="text-red-600 font-bold text-xs uppercase tracking-widest mt-1">
+              System Administrator
+            </p>
           </div>
 
           {/* Navigation Links - flex-1 allows this to grow and push the logout down */}
@@ -232,17 +209,16 @@ return (
         {/* Main Content Area */}
         <div className="flex-1 lg:min-h-[calc(100vh-64px)]">
           {activeItem === "Dashboard" && (
-            <Dashboard
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              facilities={facilities}
-              FacilityCard={FacilityCard}
-            />
+            <Dashboard searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           )}
-          {activeItem === "Blood Banks" && <BloodBanks searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
           {activeItem === "Requests" && <Requests />}
           {activeItem === "Profile" && <AdminProfile adminData={adminData} />}
-          {activeItem === "Users" && <UserManagement searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
+          {activeItem === "Users" && (
+            <UserManagement
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+            />
+          )}
         </div>
       </div>
 
@@ -258,7 +234,10 @@ return (
           />
         ))}
         {/* Adding Logout to Mobile Nav for consistency */}
-        <button onClick={handleLogout} className="flex flex-col items-center gap-1 text-slate-400">
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center gap-1 text-slate-400"
+        >
           <LogOut size={20} />
           <span className="text-[10px] uppercase font-bold">Exit</span>
         </button>

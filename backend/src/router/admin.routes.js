@@ -1,8 +1,10 @@
 const express=require('express')
-const {verifyBank, getProfileController, getAllUsers} = require('../controllers/admin.controller')
+const {verifyBank, getProfileController, getAllUsers, changeUserRoleController, rejectBank} = require('../controllers/admin.controller')
 const authMiddleware = require('../middlewares/auth.middleware')
 const router=express.Router()
 router.patch("/verify-bank/:bankId", authMiddleware, verifyBank)
+router.patch("/reject-bank/:bankId", authMiddleware, rejectBank)
 router.get("/profile", authMiddleware, getProfileController)
 router.get("/users", authMiddleware, getAllUsers)
+router.patch("/change-role", authMiddleware, changeUserRoleController)
 module.exports=router
