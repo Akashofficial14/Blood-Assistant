@@ -9,7 +9,98 @@ const {
   badRequest,
   updated,
   internalError,
+  created,
 } = require("../utills/response.utill");
+
+const registerBloodBank = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { name, organizationType, registrationDetails, contact, address } =
+      req.body;
+
+    if (!name || !organizationType) {
+      return badRequest(res, {}, "Basic information missing");
+    }
+
+    if (
+      !registrationDetails?.licenseNumber ||
+      !registrationDetails?.licenseValidity
+    ) {
+      return badRequest(res, {}, "License details required");
+    }
+
+    if (!contact?.email || !contact?.phone) {
+      return badRequest(res, {}, "Contact details required");
+    }
+
+    if (!address?.city || !address?.state || !address?.zipCode) {
+      return badRequest(res, {}, "Address details required");
+    }
+
+    const existing = await BloodBankModel.findOne({ owner: userId });
+
+    if (existing) {
+      return badRequest(res, {}, "Blood bank already registered for this user");
+    }
+
+    let location = {
+      type: "Point",
+      coordinates: [0, 0],
+    };
+
+    if (address?.location?.coordinates?.length === 2) {
+      location.coordinates = address.location.coordinates;
+    }
+
+    const bloodBank = await BloodBankModel.create({
+      owner: userId,
+
+      name,
+      organizationType,
+
+      registrationDetails: {
+        licenseNumber: registrationDetails.licenseNumber,
+        licenseValidity: registrationDetails.licenseValidity,
+        licenseDocUrl: registrationDetails.licenseDocUrl,
+      },
+
+      contact: {
+        email: contact.email,
+        phone: contact.phone,
+        emergencyContact: contact.emergencyContact,
+        website: contact.website,
+      },
+
+      address: {
+        street: address.street,
+        landmark: address.landmark,
+        city: address.city,
+        state: address.state,
+        zipCode: address.zipCode,
+        location,
+      },
+
+      bloodAvailability: [],
+
+      isOpen247: true,
+      verificationStatus: {
+        status: "pending",
+      },
+    });
+
+    // const responseData = {
+    //   id: bloodBank._id,
+    //   name: bloodBank.name,
+    //   status: bloodBank.verificationStatus.status,
+    // };
+
+    return created(res, bloodBank, "Blood bank registered successfully");
+  } catch (err) {
+    console.error("REGISTER BLOODBANK ERROR:", err);
+    return internalError(res, {}, "Failed to register blood bank");
+  }
+};
 
 const getInventory = async (req, res) => {
   try {
@@ -131,6 +222,102 @@ const updateInventory = async (req, res) => {
   } catch (err) {
     console.error("UPDATE INVENTORY ERROR:", err);
     return internalError(res, {}, "Failed to update inventory");
+  }
+};
+
+const getBloodbankDetails = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const bloodBank = await BloodBankModel.findOne({ owner: userId });
+
+    if (!bloodBank) {
+      return notFound(res, {}, "Blood bank not found");
+    }
+
+    const data = {
+      name: bloodBank.name,
+      organizationType: bloodBank.organizationType,
+
+      licenseNumber: bloodBank.registrationDetails?.licenseNumber,
+      licenseValidity: bloodBank.registrationDetails?.licenseValidity,
+
+      verificationStatus: bloodBank.verificationStatus?.status,
+
+      email: bloodBank.contact?.email,
+      phone: bloodBank.contact?.phone,
+      emergencyContact: bloodBank.contact?.emergencyContact,
+      website: bloodBank.contact?.website,
+
+      city: bloodBank.address?.city,
+      state: bloodBank.address?.state,
+      zip: bloodBank.address?.zipCode,
+
+      isOpen247: bloodBank.isOpen247,
+    };
+
+    return success(
+      res,
+      { profile: data },
+      "Blood bank details fetched successfully",
+    );
+  } catch (err) {
+    console.error("GET BLOODBANK DETAILS ERROR:", err);
+    return internalError(res, {}, "Failed to fetch details");
+  }
+};
+
+const updateBloodBankDetails = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { contact, address, isOpen247 } = req.body;
+
+    const bloodBank = await BloodBankModel.findOne({ owner: userId });
+
+    if (!bloodBank) {
+      return notFound(res, {}, "Blood bank not found");
+    }
+
+    if (
+      req.body.registrationDetails ||
+      req.body.verificationStatus ||
+      req.body.name ||
+      req.body.organizationType
+    ) {
+      return badRequest(
+        res,
+        {},
+        "You are not allowed to update restricted fields",
+      );
+    }
+
+    if (contact) {
+      if (contact.email) bloodBank.contact.email = contact.email;
+      if (contact.phone) bloodBank.contact.phone = contact.phone;
+      if (contact.emergencyContact)
+        bloodBank.contact.emergencyContact = contact.emergencyContact;
+      if (contact.website) bloodBank.contact.website = contact.website;
+    }
+
+    if (address) {
+      if (address.city) bloodBank.address.city = address.city;
+      if (address.state) bloodBank.address.state = address.state;
+      if (address.zipCode) bloodBank.address.zipCode = address.zipCode;
+      if (address.street) bloodBank.address.street = address.street;
+      if (address.landmark) bloodBank.address.landmark = address.landmark;
+    }
+
+    if (typeof isOpen247 === "boolean") {
+      bloodBank.isOpen247 = isOpen247;
+    }
+
+    await bloodBank.save();
+
+    return updated(res, {}, "Blood bank details updated successfully");
+  } catch (err) {
+    console.error("UPDATE BLOODBANK ERROR:", err);
+    return internalError(res, {}, "Failed to update details");
   }
 };
 
@@ -279,4 +466,7 @@ module.exports = {
   getRequests,
   acceptRequest,
   rejectRequest,
+  registerBloodBank,
+  getBloodbankDetails,
+  updateBloodBankDetails,
 };

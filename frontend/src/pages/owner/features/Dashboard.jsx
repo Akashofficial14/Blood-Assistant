@@ -1,44 +1,63 @@
-import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
+import { getDashboardData } from "../../../api/blood bank/getDashboardData";
 
 const Dashboard = () => {
   const [filter, setFilter] = useState("Today");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [dashboardData, setDashboardData] = useState({});
+
+  const mutation = useMutation({
+    mutationKey: ["bloodBankDashboardData"],
+    mutationFn: getDashboardData,
+    retry: 0,
+    onSuccess: (data) => {
+      if (data) {
+        setDashboardData(data?.data);
+      }
+    },
+    onError: (err) => {
+      console.error("ERROR:", err.message);
+    },
+  });
+
+  useEffect(() => {
+    mutation.mutate();
+  }, []);
 
   const months = Array.from({ length: 12 }, (_, i) =>
     new Date(0, i).toLocaleString("default", { month: "long" }),
   );
 
-  // This will later come from API
   const stats = [
     {
       title: "Total Units",
-      value: 120,
+      value: dashboardData?.stats?.totalUnits || 0,
       color: "text-red-600",
       bg: "bg-red-50",
       icon: "bloodtype",
-      change: "+12%",
+      change: "",
     },
     {
-      title: "Requests Today",
-      value: 15,
+      title: "Low Stock",
+      value: dashboardData?.stats?.lowStockCount || 0,
       color: "text-slate-800",
       bg: "bg-slate-100",
-      icon: "notifications",
-      change: "+5%",
+      icon: "warning",
+      change: "",
     },
     {
-      title: "Fulfilled",
-      value: 10,
+      title: "Blood Groups",
+      value: dashboardData?.inventory?.length || 0,
       color: "text-green-600",
       bg: "bg-green-50",
-      icon: "check_circle",
-      change: "+8%",
+      icon: "category",
+      change: "",
     },
   ];
 
   return (
     <main className="flex-1 lg:ml-72 p-6 md:p-10">
-      {/* HEADER */}
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -50,20 +69,17 @@ const Dashboard = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm">
-          <span className="material-symbols-outlined text-slate-400 text-sm">
-            <select
-              className="
-            text-sm bg-transparent outline-none cursor-pointer"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            >
-              {months.map((m, i) => (
-                <option key={i} value={i}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </span>
+          <select
+            className="text-sm bg-transparent outline-none cursor-pointer"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+          >
+            {months.map((m, i) => (
+              <option key={i} value={i}>
+                {m}
+              </option>
+            ))}
+          </select>
 
           <select
             value={filter}
@@ -77,7 +93,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {stats.map((item, i) => (
           <div
@@ -90,10 +105,6 @@ const Dashboard = () => {
                   {item.icon}
                 </span>
               </div>
-
-              <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md">
-                {item.change}
-              </span>
             </div>
 
             <h2 className={`text-3xl font-black ${item.color}`}>
@@ -105,62 +116,34 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* QUICK INSIGHTS / ACTIVITY */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Recent Activity */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
           <h3 className="font-bold text-slate-800 mb-4">Recent Activity</h3>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-green-600">
-                check_circle
-              </span>
-              <p className="text-sm text-slate-600">
-                Request fulfilled for <b>O+</b> (2 units)
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-red-600">
-                warning
-              </span>
-              <p className="text-sm text-slate-600">
-                Low stock alert for <b>AB-</b>
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-blue-600">
-                notifications
-              </span>
-              <p className="text-sm text-slate-600">
-                New request received (B+)
-              </p>
-            </div>
+            <p className="text-sm text-slate-500">
+              Activity system will be integrated later
+            </p>
           </div>
         </div>
 
-        {/* Inventory Status */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
           <h3 className="font-bold text-slate-800 mb-4">Inventory Status</h3>
 
           <div className="space-y-4">
-            {[
-              { group: "A+", value: 20 },
-              { group: "O-", value: 5 },
-              { group: "B+", value: 15 },
-            ].map((item, i) => (
+            {(dashboardData?.inventory || []).map((item, i) => (
               <div key={i}>
                 <div className="flex justify-between text-sm mb-1">
                   <span>{item.group}</span>
-                  <span className="font-bold">{item.value} units</span>
+                  <span className="font-bold">{item.units} units</span>
                 </div>
 
                 <div className="w-full h-2 bg-slate-100 rounded-full">
                   <div
                     className="h-2 bg-red-600 rounded-full"
-                    style={{ width: `${item.value * 3}%` }}
+                    style={{
+                      width: `${Math.min(item.units * 5, 100)}%`,
+                    }}
                   />
                 </div>
               </div>

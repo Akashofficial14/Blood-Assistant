@@ -4,11 +4,21 @@ const bloodbankController = require("../controllers/bloodbank.controller.js");
 
 const router = Router();
 
+router.post("/register", authMiddleware, bloodbankController.registerBloodBank);
+
 router.get("/inventory", authMiddleware, bloodbankController.getInventory);
 
 router.put("/inventory", authMiddleware, bloodbankController.updateInventory);
 
 router.get("/requests", authMiddleware, bloodbankController.getRequests);
+
+router.get("/details", authMiddleware, bloodbankController.getBloodbankDetails);
+
+router.put(
+  "/update/details",
+  authMiddleware,
+  bloodbankController.updateBloodBankDetails,
+);
 
 router.patch(
   "/requests/:id/accept",
