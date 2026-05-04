@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Dashboard from "./features/Dashboard";
 import Inventory from "./features/Inventory";
-import Requests from "./features/Requests";
 import Staff from "./features/Staff";
 import BloodBankProfile from "./features/BloodBankProfile";
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
 import axios from "axios";
+import DonarDirectory from "./features/Requests";
 
 const SidebarItem = ({ label, icon, active, onClick }) => (
   <div
@@ -35,46 +35,51 @@ const MobileItem = ({ icon, label, active, onClick }) => (
 );
 
 const OwnerDashboard = () => {
-  const [activeItem, setActiveItem] = useState("Dashboard");
+  // 1. Initialize state from localStorage immediately
+  const [activeItem, setActiveItem] = useState(() => {
+    return localStorage.getItem("activeTab") || "Dashboard";
+  });
+
   const navigate = useNavigate();
 
+  // 2. Persistent wrapper function
+  const handleItemClick = (itemName) => {
+    setActiveItem(itemName);
+    localStorage.setItem("activeTab", itemName);
+  };
+
+  // Added icons so they render correctly in the sidebar/mobile nav
   const menuItems = [
     { name: "Dashboard" },
-    { name: "Inventory" },
-    { name: "Requests" },
-    // { name: "Staff" },
+    { name: "Inventory"},
+    { name: "Donar Requests" },
     { name: "Profile" },
   ];
 
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
-      // 1. Optional: Call your backend to invalidate the session
-      let res = await axios.post(
+      await axios.post(
         "http://localhost:3000/api/auth/logout",
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
-        },
+        }
       );
-      console.log("Logout response:", res.data);
-      // 2. Clear all local storage data
       localStorage.clear();
-
-      // 3. Notify the app that authentication state has changed
       window.dispatchEvent(new Event("storageAuthChanged"));
-
-      // 4. Redirect the user to the login page
       navigate("/login");
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if the API fails, we clear local data and redirect
       localStorage.clear();
       window.dispatchEvent(new Event("storageAuthChanged"));
       navigate("/login");
     }
   };
+
+  const userStr = localStorage.getItem("user");
+  const userName = userStr ? JSON.parse(userStr).name : "User";
 
   return (
     <div className="min-h-screen bg-[#f7f9fb] font-sans antialiased text-slate-900">
@@ -89,7 +94,11 @@ const OwnerDashboard = () => {
             <p className="text-sm font-bold">City Blood Bank</p>
             <p className="text-xs text-slate-500">Hospital Panel</p>
           </div>
-          <div className="h-10 w-10 rounded-full bg-linear-to-tr from-red-600 to-orange-400 border border-slate-300" />
+          <div className="h-10 w-10 flex justify-center items-center rounded-full bg-gradient-to-tr from-red-600 to-orange-400 border border-slate-300">
+            <span className="text-white font-bold text-lg">
+              {userName.charAt(0).toUpperCase()}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -110,7 +119,7 @@ const OwnerDashboard = () => {
                 label={item.name}
                 icon={item.icon}
                 active={activeItem === item.name}
-                onClick={() => setActiveItem(item.name)}
+                onClick={() => handleItemClick(item.name)}
               />
             ))}
           </nav>
@@ -129,13 +138,16 @@ const OwnerDashboard = () => {
           </div>
         </aside>
 
-        {activeItem === "Dashboard" && <Dashboard />}
-        {activeItem === "Inventory" && <Inventory />}
-        {activeItem === "Requests" && <Requests />}
-        {/* {activeItem === "Staff" && <Staff />} */}
-        {activeItem === "Profile" && <BloodBankProfile />}
+        {/* Content Section */}
+        <div className="flex-1 lg:min-h-screen">
+            {activeItem === "Dashboard" && <Dashboard />}
+            {activeItem === "Inventory" && <Inventory />}
+            {activeItem === "Donar Requests" && <DonarDirectory />}
+            {activeItem === "Profile" && <BloodBankProfile />}
+        </div>
       </div>
 
+      {/* Mobile Navigation - Fixed with handleItemClick */}
       <nav className="lg:hidden fixed bottom-0 w-full h-20 bg-white border-t flex justify-around items-center z-50">
         {menuItems.map((item) => (
           <MobileItem
@@ -143,7 +155,7 @@ const OwnerDashboard = () => {
             icon={item.icon}
             label={item.name}
             active={activeItem === item.name}
-            onClick={() => setActiveItem(item.name)}
+            onClick={() => handleItemClick(item.name)} // This was missing the wrapper!
           />
         ))}
         <button

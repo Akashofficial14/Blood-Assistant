@@ -4,6 +4,7 @@ const authRoutes = require("./router/auth.routes");
 const bloodBankOwnerRoutes = require("./router/bloodbankowner.routes");
 const adminRoutes = require("./router/admin.routes");
 const bloodbankRoutes = require("./router/bloodBank.routes");
+const userRoutes = require("./router/user.routes");
 const cors = require("cors");
 require("dotenv").config();
 const passport = require("passport");
@@ -24,37 +25,36 @@ passport.use(
     },
     async function (accessToken, refreshToken, profile, cb) {
       try {
-        console.log("Google Auth - Profile received:", profile.emails[0].value);
         let email = profile.emails[0].value;
         let name = profile.name.givenName;
 
+        // Check if the user already exists (registered manually first)
         let existingUser = await userModel.findOne({ email });
+
         if (existingUser) {
-          console.log("Existing user found, updating google_id if needed");
-          // Add google_id if it doesn't exist
-          if (!existingUser.google_id) {
-            existingUser.google_id = profile.id;
-            await existingUser.save();
-          }
+          // If they registered as 'manage_bank' manually, this keeps that role
+          existingUser.isVerified = true;
+          if (!existingUser.google_id) existingUser.google_id = profile.id;
+
+          await existingUser.save();
           return cb(null, existingUser);
         }
 
-        //agar aisa nhi hai matlan naya user hai to uska data mongoDB me save karwao or fir usko return karwa do
-        console.log("Creating new user via Google Auth");
+        // If NO user exists, they are a NEW Google User -> Default to 'find_blood'
         let newregUser = await userModel.create({
           name,
           email,
           password: "google_auth_user",
-          userRole: "find_blood",
+          userRole: "find_blood", // Hardcoded default for new social logins
           google_id: profile.id,
+          isVerified: true,
         });
-        console.log("New user created:", newregUser.email);
+
         return cb(null, newregUser);
       } catch (error) {
-        console.error("Google Auth Error:", error.message);
         return cb(error, null);
       }
-    },
+    }
   ),
 );
 app.use(express.json());
@@ -73,6 +73,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/bloodbankowner", bloodBankOwnerRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/user", userRoutes);
 
 app.use("/api/bloodbank", bloodbankRoutes);
 

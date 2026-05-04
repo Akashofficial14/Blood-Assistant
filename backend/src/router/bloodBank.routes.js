@@ -14,6 +14,8 @@ router.get("/requests", authMiddleware, bloodbankController.getRequests);
 
 router.get("/details", authMiddleware, bloodbankController.getBloodbankDetails);
 
+router.get("/donor-details/:bloodBankId", authMiddleware, bloodbankController.getRegisteredDonors);
+
 router.put(
   "/update/details",
   authMiddleware,

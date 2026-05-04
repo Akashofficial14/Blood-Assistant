@@ -1,22 +1,75 @@
 "use client";
-import React, { useLayoutEffect, useRef } from "react";
+import React, {
+  useLayoutEffect,
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 import { useForm } from "react-hook-form";
 import { gsap } from "gsap";
 import { useNavigate } from "react-router-dom";
+import {
+  useDonateBloodRegistration,
+  useGetVerifiedBanks,
+} from "./features/hooks/useUserApi.js";
 
 export default function DonateBlood() {
   const navigate = useNavigate();
   const formRef = useRef(null);
 
+  // 1. Fetch live data from your API
+  const { data: verifiedBanksData } = useGetVerifiedBanks();
+  const { mutate: registerDonation } = useDonateBloodRegistration();
+
+  // 2. Transform the flat API data into the nested structure for dropdowns
+  const platformData = useMemo(() => {
+    if (!verifiedBanksData || !Array.isArray(verifiedBanksData)) return [];
+
+    const grouped = {};
+
+    verifiedBanksData.forEach((bank) => {
+      const state = bank.address?.state || "Unknown State";
+      const city = bank.address?.city || "Unknown City";
+
+      if (!grouped[state]) grouped[state] = {};
+      if (!grouped[state][city]) grouped[state][city] = [];
+
+      grouped[state][city].push({
+        id: bank._id,
+        name: bank.name,
+      });
+    });
+
+    return Object.keys(grouped).map((stateName) => ({
+      state: stateName,
+      cities: Object.keys(grouped[stateName]).map((cityName) => ({
+        name: cityName,
+        banks: grouped[stateName][cityName],
+      })),
+    }));
+  }, [verifiedBanksData]);
+
+  // States for filtered lists
+  const [availableCities, setAvailableCities] = useState([]);
+  const [availableBanks, setAvailableBanks] = useState([]);
+
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      isAvailable: true,
-      city: "",
-      bloodGroup: ""
+      donorInfo: { fullName: "", bloodGroup: "", dob: "", gender: "" },
+      appointment: {
+        state: "",
+        city: "",
+        bloodBankId: "",
+        preferredDate: "",
+        timeSlot: "",
+      },
+      contact: { phone: "", email: "" },
     },
   });
 
@@ -33,194 +86,247 @@ export default function DonateBlood() {
     return () => ctx.revert();
   }, []);
 
+  // Cascading Dropdown Logic using the dynamic platformData
+  const handleStateChange = (e) => {
+    const stateName = e.target.value;
+    const stateObj = platformData.find((s) => s.state === stateName);
+    setAvailableCities(stateObj ? stateObj.cities : []);
+    setAvailableBanks([]);
+    setValue("appointment.city", "");
+    setValue("appointment.bloodBankId", "");
+  };
+
+  const handleCityChange = (e) => {
+    const cityName = e.target.value;
+    const cityObj = availableCities.find((c) => c.name === cityName);
+    setAvailableBanks(cityObj ? cityObj.banks : []);
+    setValue("appointment.bloodBankId", "");
+  };
+
   const onSubmit = (data) => {
-    console.log("Donor Registered:", data);
-    // Integration point for your MongoDB/Express backend
+    const bloodBankId = data.appointment.bloodBankId;
+    console.log("Submitting donation registration for Blood Bank ID:", bloodBankId);
+
+    // We wrap the ID and the form data into the 'variables' object
+    registerDonation({
+      bloodBankId,
+      donorData: data,
+    });
+
+    console.log("Donation registration submitted for ID:", bloodBankId);
   };
 
   return (
-<>    <div ref={formRef} className="min-h-screen bg-[#0d0d0d] text-white py-16 px-6 flex items-center justify-center selection:bg-red-600">
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-red-600/10 blur-[120px] rounded-full pointer-events-none" />
+    <>
+      <div
+        ref={formRef}
+        className="min-h-screen bg-[#0d0d0d] text-white py-16 px-6 flex items-center justify-center selection:bg-red-600"
+      >
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-red-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
-        
-        {/* LEFT COLUMN: BRANDING & GUIDELINES */}
-        <div className="flex flex-col justify-center space-y-10">
-          <div className="form-animate">
-            <h1 className="text-6xl font-black tracking-tight mb-6">
-              Become a <span className="text-red-600">Donor</span>
-            </h1>
-            <p className="text-gray-400 text-xl font-medium leading-relaxed">
-              Join our community of life-savers. Your contribution bridges the gap between despair and hope.
-            </p>
-          </div>
-
-          <div className="form-animate bg-white/5 border border-white/10 p-10 rounded-[2.5rem] backdrop-blur-xl">
-            <h3 className="text-lg font-bold text-red-500 uppercase tracking-[0.3em] mb-6">Important Information</h3>
-            <ul className="space-y-5 text-gray-300">
-              {[
-                "You must be between 18-65 years old",
-                "Minimum weight requirement is 50 kg",
-                "You should be in good health",
-                "You can donate blood every 3 months"
-              ].map((info, idx) => (
-                <li key={idx} className="flex items-center gap-4 text-sm font-medium">
-                  <span className="h-2 w-2 rounded-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
-                  {info}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: THE FORM */}
-        <form 
-          onSubmit={handleSubmit(onSubmit)}
-          className="form-animate bg-white p-8 md:p-12 rounded-[3.5rem] text-black shadow-2xl space-y-6"
-        >
-          {/* Section 1: Personal Info */}
-          <div className="space-y-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Personal Information</p>
-            
-            <input 
-              {...register("fullName", { required: "Full name is required" })}
-              placeholder="Full Name"
-              className="w-full px-6 py-4 bg-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
-            />
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input 
-                {...register("email", { required: "Email is required", pattern: /^\S+@\S+$/i })}
-                placeholder="Email Address"
-                className="px-6 py-4 bg-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
-              />
-              <input 
-                {...register("phone", { required: "Phone number is required" })}
-                placeholder="Phone Number"
-                className="px-6 py-4 bg-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
-              />
+        <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
+          {/* LEFT COLUMN: GUIDELINES */}
+          <div className="flex flex-col justify-center items-center space-y-10">
+            <div className="form-animate">
+              <h1 className="text-6xl font-black tracking-tight mb-6">
+                Become a <span className="text-red-600">Donor</span>
+              </h1>
+              <p className="text-gray-400 text-xl font-medium leading-relaxed">
+                Register on our platform and choose a local blood bank to
+                schedule your donation.
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <input 
-                  type="number"
-                  {...register("age", { required: "Required", min: 18, max: 65 })}
-                  placeholder="Age (Years)"
-                  className="w-full px-6 py-4 bg-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
+            <div className="form-animate bg-white/5 border border-white/10 p-10 rounded-[2.5rem] backdrop-blur-xl">
+              <h3 className="text-lg font-bold text-red-500 uppercase tracking-[0.3em] mb-6">
+                Requirement Checklist
+              </h3>
+              <ul className="space-y-5 text-gray-300">
+                {[
+                  "18-65 years old",
+                  "Weight > 50kg",
+                  "No surgery in 6 months",
+                  "Valid Gov ID",
+                ].map((info, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-center gap-4 text-sm font-medium"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
+                    {info}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: THE NESTED FORM */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="form-animate bg-white p-8 md:p-12 rounded-[3.5rem] text-black shadow-2xl space-y-6"
+          >
+            {/* donorInfo Section */}
+            <div className="space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                Step 1: Donor Identity
+              </p>
+              <div className="flex flex-col gap-1">
+                <input
+                  {...register("donorInfo.fullName", {
+                    required: "Full name is required",
+                    minLength: { value: 3, message: "Minimum 3 characters" },
+                  })}
+                  placeholder="Full Name"
+                  className={`input-field ${errors.donorInfo?.fullName ? "ring-2 ring-red-500" : ""}`}
                 />
-                {errors.age && <p className="text-[10px] text-red-600 font-bold ml-2">Must be 18-65</p>}
               </div>
-              <div className="space-y-1">
-                <input 
-                  type="number"
-                  {...register("weight", { required: "Required", min: 50 })}
-                  placeholder="Weight (kg)"
-                  className="w-full px-6 py-4 bg-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
+
+              <div className="grid grid-cols-2 gap-4">
+                <select
+                  {...register("donorInfo.bloodGroup", {
+                    required: "Required",
+                  })}
+                  className="input-field"
+                >
+                  <option value="">Blood Group</option>
+                  {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
+                    (t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ),
+                  )}
+                </select>
+
+                <select
+                  {...register("donorInfo.gender", { required: "Required" })}
+                  className="input-field"
+                >
+                  <option value="">Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {/* appointment Section */}
+            <div className="space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                Step 2: Location & Bank
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <select
+                  {...register("appointment.state", { required: "Required" })}
+                  onChange={handleStateChange}
+                  className="input-field"
+                >
+                  <option value="">State</option>
+                  {platformData.map((s) => (
+                    <option key={s.state} value={s.state}>
+                      {s.state}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  {...register("appointment.city", { required: "Required" })}
+                  onChange={handleCityChange}
+                  disabled={availableCities.length === 0}
+                  className="input-field disabled:opacity-40"
+                >
+                  <option value="">City</option>
+                  {availableCities.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <select
+                {...register("appointment.bloodBankId", {
+                  required: "Required",
+                })}
+                disabled={availableBanks.length === 0}
+                className="input-field disabled:opacity-40"
+              >
+                <option value="">Select Registered Bank</option>
+                {availableBanks.map((bank) => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.name}
+                  </option>
+                ))}
+              </select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="date"
+                  {...register("appointment.preferredDate", {
+                    required: "Required",
+                  })}
+                  className="input-field"
                 />
-                {errors.weight && <p className="text-[10px] text-red-600 font-bold ml-2">Min 50kg</p>}
+                <select
+                  {...register("appointment.timeSlot", {
+                    required: "Required",
+                  })}
+                  className="input-field"
+                >
+                  <option value="">Time Slot</option>
+                  <option value="9am-12pm">9AM - 12PM</option>
+                  <option value="12pm-3pm">12PM - 3PM</option>
+                  <option value="3pm-6pm">3PM - 6PM</option>
+                </select>
               </div>
             </div>
-          </div>
 
-          {/* Section 2: Blood & Location */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Blood Information</p>
-              <select 
-                {...register("bloodGroup", { required: true })}
-                className="w-full px-6 py-4 bg-gray-100 rounded-2xl outline-none cursor-pointer focus:ring-2 focus:ring-red-600 font-medium appearance-none"
-              >
-                <option value="" disabled>Select Blood Group</option>
-                {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+            {/* contact Section */}
+            <div className="space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                Step 3: Contact Details
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  {...register("contact.phone", { required: "Required" })}
+                  placeholder="Phone"
+                  className="input-field"
+                />
+                <input
+                  {...register("contact.email", { required: "Required" })}
+                  placeholder="Email"
+                  className="input-field"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Location</p>
-              <select 
-                {...register("city", { required: true })}
-                className="w-full px-6 py-4 bg-gray-100 rounded-2xl outline-none cursor-pointer focus:ring-2 focus:ring-red-600 font-medium appearance-none"
-              >
-                <option value="" disabled>Select City</option>
-                {["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego"].map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
 
-          {/* Section 3: Availability */}
-          <div className="flex items-center justify-between p-5 bg-gray-50 rounded-[2rem] border border-gray-100">
-            <div className="pr-4">
-              <p className="font-bold text-sm">Availability Status</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Ready for urgent calls</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" {...register("isAvailable")} className="sr-only peer" />
-              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-red-600 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner"></div>
-            </label>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-3 pt-4">
-            <button 
+            <button
               type="submit"
               className="w-full py-5 bg-red-600 text-white rounded-2xl font-black text-lg hover:bg-black transition-all shadow-[0_15px_30px_rgba(220,38,38,0.25)] active:scale-95"
             >
-              Register as Donor
+              Register & Schedule
             </button>
-            <button 
-              type="button"
-              onClick={() => navigate("/")}
-              className="w-full py-3 text-gray-400 font-bold hover:text-black transition-colors text-sm uppercase tracking-widest"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-
+          </form>
+        </div>
       </div>
-      
-    </div>
-                 <footer className="bg-[#0d0d0d] text-white pt-24 pb-12 px-6 border-t border-white/5">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
-          <div className="col-span-1 md:col-span-2 space-y-6">
-            <h3 className="text-2xl font-black tracking-tighter">Blood <span className="text-red-600">Assistant.</span></h3>
-            <p className="text-gray-500 max-w-sm leading-relaxed">
-              Indore's digital life-saving network. We leverage modern web tech 
-              to ensure no request for blood goes unanswered.
-            </p>
-          </div>
-          
-          <div className="space-y-6">
-            <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-red-600">Quick Links</h4>
-            <ul className="space-y-4 text-gray-400 font-medium text-sm">
-              <li className="hover:text-white cursor-pointer transition-colors">Home</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Donate Blood</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Search Banks</li>
-              <li className="hover:text-white cursor-pointer transition-colors">About Us</li>
-            </ul>
-          </div>
 
-          <div className="space-y-6">
-            <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-red-600">Connect</h4>
-            <ul className="space-y-4 text-gray-400 font-medium text-sm">
-              <li className="hover:text-white cursor-pointer transition-colors">Instagram</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Twitter</li>
-              <li className="hover:text-white cursor-pointer transition-colors">LinkedIn</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Contact Support</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-gray-600 text-xs font-bold uppercase tracking-widest">
-            © 2026 Akash Warade. Developed for Impact.
-          </p>
-          <div className="flex gap-8 text-gray-600 text-xs font-bold uppercase tracking-widest">
-            <span className="hover:text-red-600 cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-red-600 cursor-pointer">Terms of Service</span>
-          </div>
-        </div>
-      </footer>
-</>
+      {/* Footer and Styles remain the same */}
+      <style jsx>{`
+        .input-field {
+          width: 100%;
+          padding: 1rem 1.5rem;
+          background-color: #f3f4f6;
+          border-radius: 1rem;
+          outline: none;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          border: 1px solid transparent;
+        }
+        .input-field:focus {
+          border-color: #dc2626;
+          background-color: white;
+        }
+      `}</style>
+    </>
   );
 }

@@ -111,14 +111,16 @@ const bloodBankSchema = new mongoose.Schema(
         },
       },
     ],
+    registeredDonors: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: false,
+      },
+    ],
     isOpen247: {
       type: Boolean,
       default: true,
-    },
-    owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
     },
   },
   { timestamps: true },

@@ -1,4 +1,5 @@
 const BloodBankModel = require("../models/bloodBank.model");
+const donationModel = require("../models/donateblood.model");
 const RequestModel = require("../models/request.model");
 const customError = require("../utills/customError");
 const { formatTime } = require("../utills/formatTime");
@@ -460,6 +461,39 @@ const rejectRequest = async (req, res) => {
   }
 };
 
+const getRegisteredDonors = async (req, res, next) => {
+  try {
+    const { bloodBankId } = req.params;
+
+    if (!bloodBankId) {
+      throw new customError("Blood bank ID is required", 400);
+    }
+
+    /**
+     * We query the Donation collection where bloodBank matches the ID.
+     * Then we populate the 'user' field to get the account details.
+     */
+    const allDonations = await donationModel.find({ bloodBank: bloodBankId })
+      // .populate("user", "-password") // Get user details but hide password
+      // .populate("bloodBank", "name contact address") // Optional: Get bank context
+      .sort({ createdAt: -1 }); // Show most recent registrations first
+
+    // allDonations is now an array of objects containing donorInfo, appointment, contact, and user
+    return success(
+      res,
+      { 
+        count: allDonations.length,
+        donors: allDonations 
+      },
+      "All donor registration details fetched successfully"
+    );
+
+  } catch (err) {
+    console.error("GET REGISTERED DONORS ERROR:", err);
+    return next(err); 
+  }
+};
+
 module.exports = {
   getInventory,
   updateInventory,
@@ -469,4 +503,5 @@ module.exports = {
   registerBloodBank,
   getBloodbankDetails,
   updateBloodBankDetails,
+  getRegisteredDonors,
 };

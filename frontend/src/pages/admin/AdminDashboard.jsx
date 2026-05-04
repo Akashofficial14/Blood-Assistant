@@ -163,7 +163,9 @@ const FacilityDashboard = () => {
         <span className="text-2xl font-black tracking-tighter text-red-600 cursor-pointer hover:opacity-80 transition-opacity">
           Blood Assistant
         </span>
-        <div className="h-10 w-10 rounded-full bg-linear-to-tr from-red-600 to-orange-400 border border-slate-300" />
+        <div className="h-10 w-10 flex justify-center items-center rounded-full bg-linear-to-tr from-red-600 to-orange-400 border border-slate-300" >
+          <span className="text-white font-bold text-lg">{adminData?.name?.charAt(0) || "A"}</span>
+        </div>
       </header>
 
       <div className="flex pt-16">
