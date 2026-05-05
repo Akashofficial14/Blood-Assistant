@@ -7,6 +7,7 @@ import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
 import axios from "axios";
 import DonarDirectory from "./features/Requests";
+import Chatbot from "../../components/ChatBot";
 
 const SidebarItem = ({ label, icon, active, onClick }) => (
   <div
@@ -166,6 +167,7 @@ const OwnerDashboard = () => {
           <span className="text-[10px] uppercase font-bold">Exit</span>
         </button>
       </nav>
+      <Chatbot/>
     </div>
   );
 };

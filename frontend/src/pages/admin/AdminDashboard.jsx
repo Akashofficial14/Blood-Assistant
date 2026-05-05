@@ -8,6 +8,7 @@ import { getAdminProfile } from "./features/hooks/useAdminApi";
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
 import axios from "axios";
+import Chatbot from "../../components/ChatBot";
 
 // --- Sub-components ---
 
@@ -163,8 +164,10 @@ const FacilityDashboard = () => {
         <span className="text-2xl font-black tracking-tighter text-red-600 cursor-pointer hover:opacity-80 transition-opacity">
           Blood Assistant
         </span>
-        <div className="h-10 w-10 flex justify-center items-center rounded-full bg-linear-to-tr from-red-600 to-orange-400 border border-slate-300" >
-          <span className="text-white font-bold text-lg">{adminData?.name?.charAt(0) || "A"}</span>
+        <div className="h-10 w-10 flex justify-center items-center rounded-full bg-linear-to-tr from-red-600 to-orange-400 border border-slate-300">
+          <span className="text-white font-bold text-lg">
+            {adminData?.name?.charAt(0) || "A"}
+          </span>
         </div>
       </header>
 
@@ -244,6 +247,7 @@ const FacilityDashboard = () => {
           <span className="text-[10px] uppercase font-bold">Exit</span>
         </button>
       </nav>
+      <Chatbot />
     </div>
   );
 };
