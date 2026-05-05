@@ -31,12 +31,16 @@ export const getAdminProfileData = async () => {
 
 // 1. Update Profile API
 export const updateProfile = async ({ userId, data }) => {
-    const token = localStorage.getItem("token");
-    const res = await axiosInstance.put(`/auth/update-profile/${userId}`, data, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    console.log("Update Profile API Response:", res.data); // Log the full response
-    return res.data.data; // This is the updated user object
+try {
+        const token = localStorage.getItem("token");
+        const res = await axiosInstance.put(`/auth/update-profile/${userId}`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log("Update Profile API Response:", res.data); // Log the full response
+        return res.data.data; // This is the updated user object
+} catch (error) {
+    console.log("error in update profile api::", error.message)
+}
 };
 
 // 2. Change Password API

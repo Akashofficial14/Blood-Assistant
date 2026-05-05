@@ -14,6 +14,7 @@ import ForgotPassword from "../components/ForgetPass";
 import ResetPassword from "../components/UpdatePass";
 import GoogleAuthSuccess from "../components/GoogleAuthSuccess";
 import MultiStepForm from "../components/MultiStepForm";
+import UserProfile from "../pages/user/UserProfile";
 const Approuter = () => {
   const router = createBrowserRouter([
     {
@@ -50,12 +51,16 @@ const Approuter = () => {
         },
         {
           path: "/google-auth-success/:token",
-          element: <GoogleAuthSuccess/>,
+          element: <GoogleAuthSuccess />,
         },
         {
           path: "/bloodbank/details/form",
-          element: <MultiStepForm/>
-        }
+          element: <MultiStepForm />,
+        },
+        {
+          path: "/user/profile",
+          element: <UserProfile />,
+        },
       ],
     },
     {
