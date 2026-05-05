@@ -1,4 +1,5 @@
-const BloodBankModel = require("../models/bloodBank.model");
+// const BloodBankModel = require("../models/bloodBank.model");
+const BloodBankModel = require("../models/bloodbank.model");
 const donationModel = require("../models/donateblood.model");
 const RequestModel = require("../models/request.model");
 const customError = require("../utills/customError");

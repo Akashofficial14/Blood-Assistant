@@ -97,7 +97,7 @@ const OwnerDashboard = () => {
           </div>
           <div className="h-10 w-10 flex justify-center items-center rounded-full bg-gradient-to-tr from-red-600 to-orange-400 border border-slate-300">
             <span className="text-white font-bold text-lg">
-              {userName.charAt(0).toUpperCase()}
+              {userName?.charAt(0)?.toUpperCase()}
             </span>
           </div>
         </div>
