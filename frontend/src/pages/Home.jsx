@@ -107,7 +107,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => navigate("/donateBlood")}
-              className="animate-appear opacity-0 scale-90 text-[#000] bg-white  w-full sm:w-auto px-10 py-5 border border-white/10 rounded-2xl font-bold text-lg hover:bg-black hover:text-white transition-all"
+              className="animate-appear opacity-0 scale-90 text-[#000] bg-white  w-max-content sm:w-auto px-10 py-5 border border-white/10 rounded-2xl font-bold text-lg hover:bg-black hover:text-white transition-all"
             >
               Donor Portal
             </button>

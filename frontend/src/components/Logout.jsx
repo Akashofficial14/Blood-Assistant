@@ -68,7 +68,7 @@ const Logout = ({ user }) => {
           {/* View Profile Option */}
           <button
             onClick={() => {
-              navigate("/profile");
+              navigate("/user/profile");
               setIsOpen(false);
             }}
             className="w-full text-left px-4 py-1 text-gray-500 hover:bg-gray-100 flex items-center gap-2 transition-colors"
