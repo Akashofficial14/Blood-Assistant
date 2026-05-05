@@ -4,6 +4,7 @@ import UserDashboard from "./pages/user/UserDashboard";
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import Chatbot from "./components/ChatBot";
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -19,6 +20,7 @@ const App = () => {
     <div className="min-h-screen max-w-screen bg-[#FFFDFD]">
       <UserDashboard />
       <ToastContainer />
+      <Chatbot/>
     </div>
   );
 };

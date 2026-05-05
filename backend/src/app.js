@@ -4,6 +4,7 @@ const authRoutes = require("./router/auth.routes");
 const bloodBankOwnerRoutes = require("./router/bloodbankowner.routes");
 const adminRoutes = require("./router/admin.routes");
 const bloodbankRoutes = require("./router/bloodBank.routes");
+const chatRoutes = require("./router/chat.routes")
 const userRoutes = require("./router/user.routes");
 const nearbyBloodBankRoutes = require("./router/nearbyBloodBanks.routes");
 const cors = require("cors");
@@ -77,6 +78,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/search", nearbyBloodBankRoutes);
 app.use("/api/bloodbank", bloodbankRoutes);
+app.use("/api/chat", chatRoutes)
 
 app.use(errorMiddleware);
 module.exports = app;
