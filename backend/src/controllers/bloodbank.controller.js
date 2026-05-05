@@ -99,7 +99,20 @@ const registerBloodBank = async (req, res) => {
     return created(res, bloodBank, "Blood bank registered successfully");
   } catch (err) {
     console.error("REGISTER BLOODBANK ERROR:", err);
-    return internalError(res, {}, "Failed to register blood bank");
+
+    // --- NEW LOGIC TO HANDLE DUPLICATE KEY ERRORS ---
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyValue)[0]; // Gets 'contact.email' or 'registrationDetails.licenseNumber'
+      let message = "This information is already registered";
+
+      if (field.includes("email")) message = "This email address is already in use by another blood bank";
+      if (field.includes("licenseNumber")) message = "This License Number is already registered";
+      if (field.includes("phone")) message = "This phone number is already in use";
+
+      return badRequest(res, {}, message); // This sends the specific message to the frontend
+    }
+
+    return customError(res, {}, "Failed to register blood bank");
   }
 };
 
@@ -481,16 +494,16 @@ const getRegisteredDonors = async (req, res, next) => {
     // allDonations is now an array of objects containing donorInfo, appointment, contact, and user
     return success(
       res,
-      { 
+      {
         count: allDonations.length,
-        donors: allDonations 
+        donors: allDonations
       },
       "All donor registration details fetched successfully"
     );
 
   } catch (err) {
     console.error("GET REGISTERED DONORS ERROR:", err);
-    return next(err); 
+    return next(err);
   }
 };
 

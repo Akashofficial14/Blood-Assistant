@@ -37,11 +37,6 @@ const DonarDirectory = () => {
 
   return (
     <main className="flex-1 lg:ml-72 p-6 md:p-10 bg-slate-50 min-h-screen">
-      {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
-        </div>
-      )}
 
       {/* DASHBOARD HEADER */}
       <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -53,7 +48,6 @@ const DonarDirectory = () => {
             Review and process upcoming blood donation appointments.
           </p>
         </div>
-
         <div className="flex gap-4">
           <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 text-center">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -65,6 +59,11 @@ const DonarDirectory = () => {
           </div>
         </div>
       </div>
+             {isLoading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+        </div>
+      )}
 
       {/* APPOINTMENT LIST */}
       <div className="grid gap-6">

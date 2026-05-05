@@ -6,6 +6,9 @@ export const getRegisteredDonors = async ({bloodBankId}) => {
         if (!token) {
             throw new Error("No token found");
         }
+        if(!bloodBankId){
+            throw new Error("Blood Bank ID is required");
+        }
         const response = await axiosInstance.get(`/bloodbank/donor-details/${bloodBankId}`, {
             headers: { Authorization: `Bearer ${token}` },
         });

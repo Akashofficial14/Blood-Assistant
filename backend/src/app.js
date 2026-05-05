@@ -5,6 +5,7 @@ const bloodBankOwnerRoutes = require("./router/bloodbankowner.routes");
 const adminRoutes = require("./router/admin.routes");
 const bloodbankRoutes = require("./router/bloodBank.routes");
 const userRoutes = require("./router/user.routes");
+const nearbyBloodBankRoutes = require("./router/nearbyBloodBanks.routes");
 const cors = require("cors");
 require("dotenv").config();
 const passport = require("passport");
@@ -74,7 +75,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/bloodbankowner", bloodBankOwnerRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
-
+app.use("/api/search", nearbyBloodBankRoutes);
 app.use("/api/bloodbank", bloodbankRoutes);
 
 app.use(errorMiddleware);
