@@ -5,7 +5,8 @@ import axios from "axios";
 import { NavLink, Outlet, useNavigate } from "react-router";
 import { Eye, EyeOff, Droplet } from "lucide-react";
 import MultiStepForm from "../components/MultiStepForm";
-import { getBloodbankDetails } from "../api/blood bank/getBloodbankDetails";
+// ✅ Correct
+import { getBloodbankDetails } from "../api/blood bank/getBloodBankDetails";
 
 const AuthLayout = () => {
   const [isLogin, setIsLogin] = useState(true);
