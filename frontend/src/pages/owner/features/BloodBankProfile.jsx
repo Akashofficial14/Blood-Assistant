@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { getBloodbankDetails } from "../../../api/blood bank/getBloodbankDetails";
+// import { getBloodbankDetails } from "../../../api/blood bank/getBloodbankDetails";
+import { getBloodbankDetails } from "../../../api/blood bank/getBloodBankDetails";
 import { updateBloodBankDetails } from "../../../api/blood bank/updateBloodBankDetails";
 
 const BloodBankProfile = () => {

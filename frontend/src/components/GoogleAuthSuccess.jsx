@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getBloodbankDetails } from "../api/blood bank/getBloodbankDetails"; // Ensure this path is correct
+// import { getBloodbankDetails } from "../api/blood bank/getBloodbankDetails"; // Ensure this path is correct
+import { getBloodbankDetails } from "../api/blood bank/getBloodBankDetails";
+
 
 const GoogleAuthSuccess = () => {
     const params = useParams();

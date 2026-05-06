@@ -6,7 +6,7 @@ const adminRoutes = require("./router/admin.routes");
 const bloodbankRoutes = require("./router/bloodBank.routes");
 const chatRoutes = require("./router/chat.routes")
 const userRoutes = require("./router/user.routes");
-const nearbyBloodBankRoutes = require("./router/nearbyBloodBanks.routes");
+const nearbyBloodBankRoutes = require("./router/nearbybloodbanks.routes");
 const cors = require("cors");
 require("dotenv").config();
 const passport = require("passport");
