@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getAllVerifiedBloodBanks } from "../../../../api/admin/getProfile";
-import { sendDonateBloodRegisterRequest } from "../../../../api/user/DonateBloodRegister";
+// import { sendDonateBloodRegisterRequest } from "../../../../api/user/DonateBloodRegister";
+import { sendDonateBloodRegisterRequest } from "../../../../api/user/donateBloodRegister";
+
 import { toast } from "react-toastify";
 
 export const useGetVerifiedBanks = () => {
