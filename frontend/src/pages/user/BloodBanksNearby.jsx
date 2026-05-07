@@ -18,17 +18,44 @@ export default function BloodBanks() {
   const { data: banks = [], isLoading, isError, refetch } = useGetVerifiedBanks();
 
   // ── Dynamically build states list from real API data ──
-  const stateOptions = useMemo(() => {
-    const states = [...new Set(banks.map((b) => b.state).filter(Boolean))].sort();
-    return ["All", ...states];
-  }, [banks]);
+// ── Dynamically build states list from real API data ──
+const stateOptions = useMemo(() => {
+  const states = [
+    ...new Set(
+      banks
+        .map((b) => b.address?.state?.toUpperCase().trim())
+        .filter(Boolean)
+    ),
+  ].sort();
 
-  // ── Dynamically build cities based on selected state ──
-  const cityOptions = useMemo(() => {
-    const source = selectedState === "All" ? banks : banks.filter((b) => b.state === selectedState);
-    const cities = [...new Set(source.map((b) => b.city).filter(Boolean))].sort();
-    return ["All", ...cities];
-  }, [banks, selectedState]);
+  return ["All", ...states];
+}, [banks]);
+
+// ── Dynamically build cities based on selected state ──
+const cityOptions = useMemo(() => {
+  const source =
+    selectedState === "All"
+      ? banks
+      : banks.filter(
+          (b) =>
+            b.address?.state?.toUpperCase().trim() === selectedState
+        );
+
+  const cities = [
+    ...new Set(
+      source
+        .map((b) => {
+          const city = b.address?.city;
+          return city
+            ? city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()
+            : null;
+        })
+        .filter(Boolean)
+    ),
+  ].sort();
+
+  return ["All", ...cities];
+}, [banks, selectedState]);
 
   // Reset city when state changes
   const handleStateChange = (state) => {
@@ -37,22 +64,29 @@ export default function BloodBanks() {
   };
 
   // ── Filter + Sort ──
-  const filtered = [...banks]
-    .filter((bank) => {
-      const matchSearch =
-        bank.name?.toLowerCase().includes(search.toLowerCase()) ||
-        bank.city?.toLowerCase().includes(search.toLowerCase()) ||
-        bank.state?.toLowerCase().includes(search.toLowerCase());
+const filtered = [...banks]
+  .filter((bank) => {
+    const matchSearch =
+      bank.name?.toLowerCase().includes(search.toLowerCase()) ||
+      bank.address?.city?.toLowerCase().includes(search.toLowerCase()) ||
+      bank.address?.state?.toLowerCase().includes(search.toLowerCase());
 
-      const matchGroup =
-        selectedGroup === "All" ||
-        bank.bloodAvailability?.some((s) => s.group === selectedGroup && s.unitsAvailable > 0);
+    const matchGroup =
+      selectedGroup === "All" ||
+      bank.bloodAvailability?.some(
+        (s) => s.group === selectedGroup && s.unitsAvailable > 0
+      );
 
-      const matchState = selectedState === "All" || bank.state === selectedState;
-      const matchCity = selectedCity === "All" || bank.city === selectedCity;
+    const matchState =
+      selectedState === "All" ||
+      bank.address?.state?.toUpperCase().trim() === selectedState;
 
-      return matchSearch && matchGroup && matchState && matchCity;
-    })
+    const matchCity =
+      selectedCity === "All" ||
+      bank.address?.city === selectedCity;
+
+    return matchSearch && matchGroup && matchState && matchCity;
+  })
     .sort((a, b) => {
       if (sortBy === "name") return a.name?.localeCompare(b.name);
       if (sortBy === "stock")
@@ -343,7 +377,7 @@ export default function BloodBanks() {
                         <h3 className="text-[15px] font-bold leading-snug text-white group-hover:text-red-100 transition-colors">
                           {bank.name}
                         </h3>
-                        <p className="mt-1 text-zinc-500 text-xs">📍 {bank.city}, {bank.state}</p>
+                        <p className="mt-1 text-zinc-500 text-xs">📍  {bank.address?.city}, {bank.address?.state}</p>
                       </div>
                       <div
                         className="ml-3 flex-shrink-0 px-2.5 py-1 rounded-lg border text-[11px] font-bold"
