@@ -80,10 +80,6 @@ app.use(
   })
 );
 
-app.options("*", cors()); // ← add this line
-// app.get("/",(req,res)=>{
-//     res.render("index.ejs")
-// })
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/bloodbankowner", bloodBankOwnerRoutes);
