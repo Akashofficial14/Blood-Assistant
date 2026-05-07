@@ -30,10 +30,12 @@ const AuthLayout = () => {
     const endpoint = isLogin ? "auth/login" : "auth/register";
 
     try {
-      // 1. WIPE EVERYTHING before the new login attempt starts
+      // ✅ Step 1 - wipe old person's data completely first
       localStorage.clear();
 
-      const res = await axiosInstance.post(endpoint, data, { withCredentials: true });
+      const res = await axiosInstance.post(endpoint, data, {
+        withCredentials: true,
+      });
 
       if (res.data && res.data.success) {
         const resData = res.data.data || {};
@@ -41,33 +43,31 @@ const AuthLayout = () => {
         const role = user?.userRole;
         const token = resData.token;
 
-        // 2. STORE NEW DATA
+        // ✅ Step 2 - save new person's data
         if (token) localStorage.setItem("token", token);
         if (role) localStorage.setItem("role", role);
         if (user) localStorage.setItem("user", JSON.stringify(user));
 
-        // 3. SYNC & NAVIGATE
+        // ✅ Step 3 - tell Navbar to re-fetch with new token immediately
         window.dispatchEvent(new Event("storageAuthChanged"));
 
+        // ✅ Step 4 - navigate based on role
         setTimeout(async () => {
           if (role === "manage_bank") {
-            const data = await getBloodbankDetails();
-            if (data) {
-              navigate("/manage-blood-bank");
-              return;
-            } else {
-              navigate("/bloodbank/details/form");
-              return;
-            }
-          } else if (role === "admin") navigate("/admin/dashboard");
-          else navigate("/");
+            const bankData = await getBloodbankDetails();
+            if (bankData) navigate("/manage-blood-bank");
+            else navigate("/bloodbank/details/form");
+          } else if (role === "admin") {
+            navigate("/admin/dashboard");
+          } else {
+            navigate("/");
+          }
         }, 100);
 
         toast.success(isLogin ? "Welcome back!" : "Account created!");
       }
     } catch (error) {
-      // If login fails, keep it cleared so old data doesn't show up
-      localStorage.clear();
+      localStorage.clear(); // ✅ wipe on failure too so old data never shows
       toast.error(error.response?.data?.message || "Authentication failed");
     }
   };

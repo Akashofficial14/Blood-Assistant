@@ -1,49 +1,51 @@
-import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Logout from "./Logout";
+import axiosInstance from "../config/axiosInstance";
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ start false, let fetchUser decide
   const [showLoginPopup, setShowLoginPopup] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // NEW
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("role");
+  const fetchUser = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const role = localStorage.getItem("role");
 
-        if (!token || !role) {
-          setUser(null);
-          setIsLoggedIn(false);
-          return;
-        }
-
-        setIsLoggedIn(true);
-        const res = await axiosInstance.get("/auth/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.data?.user) {
-          setUser(res.data.user);
-          localStorage.setItem("user", JSON.stringify(res.data.user));
-        }
-      } catch (error) {
-        if (error.response?.status === 401) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("role");
-          setUser(null);
-          setIsLoggedIn(false);
-        }
+      if (!token || !role) {
+        setUser(null);
+        setIsLoggedIn(false);
+        return;
       }
-    };
 
+      const res = await axiosInstance.get("/auth/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.data?.user) {
+        // ✅ Always overwrite with fresh API data - fixes stale user bug
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        setUser(res.data.user);
+        setIsLoggedIn(true);
+      }
+    } catch (error) {
+      if (error.response?.status === 401) {
+        localStorage.clear();
+        setUser(null);
+        setIsLoggedIn(false);
+      }
+    }
+  };
+
+  useEffect(() => {
     fetchUser();
+
+    // ✅ Listen for login/logout events from any component
+    window.addEventListener("storageAuthChanged", fetchUser);
+    return () => window.removeEventListener("storageAuthChanged", fetchUser);
   }, []);
 
   const handleDonateClick = (e) => {
@@ -85,9 +87,7 @@ const Navbar = () => {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex gap-8 text-md font-medium">
-          <NavLink className={getNavLinkClass} to="/">
-            Home
-          </NavLink>
+          <NavLink className={getNavLinkClass} to="/">Home</NavLink>
           <NavLink className={getNavLinkClass} to="/bloodBanks">
             Find Blood Banks Nearby
           </NavLink>
@@ -98,12 +98,10 @@ const Navbar = () => {
           >
             Donate Blood
           </NavLink>
-          <NavLink className={getNavLinkClass} to="/about">
-            About Us
-          </NavLink>
+          <NavLink className={getNavLinkClass} to="/about">About Us</NavLink>
         </div>
 
-        {/* Right */}
+        {/* Right - Desktop */}
         <div className="hidden md:block">
           {isLoggedIn && user ? (
             <Logout user={user} />
@@ -117,8 +115,8 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <div className="md:hidden">
+        {/* Right - Mobile */}
+        <div className="md:hidden flex items-center gap-2">
           {isLoggedIn && user ? (
             <Logout user={user} />
           ) : (
@@ -129,13 +127,13 @@ const Navbar = () => {
               Login
             </NavLink>
           )}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="text-red-500 text-2xl"
+          >
+            ☰
+          </button>
         </div>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden text-red-500 text-2xl"
-        >
-          ☰
-        </button>
       </nav>
 
       {/* Mobile Menu */}
@@ -147,38 +145,22 @@ const Navbar = () => {
         }`}
       >
         <div className="flex flex-col items-center gap-5 py-6 text-lg font-medium">
-          <NavLink
-            className={getNavLinkClass}
-            onClick={() => setMobileMenuOpen(false)}
-            to="/"
-          >
+          <NavLink className={getNavLinkClass} onClick={() => setMobileMenuOpen(false)} to="/">
             Home
           </NavLink>
-          <NavLink
-            className={getNavLinkClass}
-            onClick={() => setMobileMenuOpen(false)}
-            to="/bloodBanks"
-          >
+          <NavLink className={getNavLinkClass} onClick={() => setMobileMenuOpen(false)} to="/bloodBanks">
             Find Blood Banks Nearby
           </NavLink>
           <NavLink
             className={getNavLinkClass}
-            onClick={(e) => {
-              handleDonateClick(e);
-              setMobileMenuOpen(false);
-            }}
+            onClick={(e) => { handleDonateClick(e); setMobileMenuOpen(false); }}
             to="/donateBlood"
           >
             Donate Blood
           </NavLink>
-          <NavLink
-            className={getNavLinkClass}
-            onClick={() => setMobileMenuOpen(false)}
-            to="/about"
-          >
+          <NavLink className={getNavLinkClass} onClick={() => setMobileMenuOpen(false)} to="/about">
             About Us
           </NavLink>
-
           {!isLoggedIn && (
             <NavLink
               to="/login"
@@ -191,33 +173,22 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Popup (responsive fix only) */}
+      {/* Login Popup */}
       {showLoginPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-3xl p-6 md:p-10 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-3xl p-6 md:p-10 w-full max-w-md shadow-2xl">
             <div className="text-center space-y-6">
-              <h2 className="text-2xl md:text-3xl font-black">
-                Become a Hero!
-              </h2>
+              <h2 className="text-2xl md:text-3xl font-black">Become a Hero!</h2>
               <p className="text-gray-500">
-                Please register or login first to join our community of
-                life-saving donors.
+                Please register or login first to join our community of life-saving donors.
               </p>
-
               <button
-                onClick={() => {
-                  setShowLoginPopup(false);
-                  navigate("/login");
-                }}
+                onClick={() => { setShowLoginPopup(false); navigate("/login"); }}
                 className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-black transition"
               >
                 Login / Register Now
               </button>
-
-              <button
-                onClick={() => setShowLoginPopup(false)}
-                className="text-gray-400 font-bold"
-              >
+              <button onClick={() => setShowLoginPopup(false)} className="text-gray-400 font-bold">
                 Maybe Later
               </button>
             </div>
