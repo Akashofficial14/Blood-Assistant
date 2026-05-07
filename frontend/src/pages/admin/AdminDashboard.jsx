@@ -213,17 +213,24 @@ const FacilityDashboard = () => {
         </aside>
 
         {/* Main Content Area */}
-        <div className="flex-1 lg:min-h-[calc(100vh-64px)]">
+        <div className="flex-1 lg:min-h-[calc(100vh-64px)] w-full overflow-x-hidden">
           {activeItem === "Dashboard" && (
             <Dashboard searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           )}
+
           {activeItem === "Requests" && <Requests />}
+
           {activeItem === "Profile" && <AdminProfile adminData={adminData} />}
+
           {activeItem === "Users" && (
-            <UserManagement
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-            />
+            <div className="w-full max-w-full overflow-x-auto">
+              <div className="min-w-[320px]">
+                <UserManagement
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                />
+              </div>
+            </div>
           )}
         </div>
       </div>
