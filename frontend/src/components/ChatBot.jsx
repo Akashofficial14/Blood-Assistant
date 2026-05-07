@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { sendChatMessage } from "../api/chat/chatApi";
+import { getAdminProfileData } from "../api/admin/getProfile";
 
 const SUGGESTED_QUESTIONS = [
   "How to donate blood?",
@@ -118,13 +119,13 @@ export default function Chatbot() {
     <>
       <button
         onClick={() => setIsOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-[9999] w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 shadow-lg flex items-center justify-center transition-transform hover:scale-105"
+        className="fixed bottom-24 sm:bottom-6 right-6 z-9999 w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 shadow-lg flex items-center justify-center transition-transform hover:scale-105"
       >
         {isOpen ? <CloseIcon /> : <BotIcon />}
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-[9998] w-[360px] max-h-[520px] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-40 sm:bottom-24 right-6 z-9998 w-85 max-h-150 h-120 bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="bg-red-500 text-white p-3 flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
