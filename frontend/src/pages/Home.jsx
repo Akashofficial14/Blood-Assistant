@@ -143,8 +143,8 @@ export default function Home() {
             </div>
 
             <h2 className="text-4xl md:text-6xl font-black leading-[1.1] text-white tracking-tight">
-              Register as a <span className="text-red-600">blood donor</span>{" "}
-              and become <br /> a hero.
+              Register as a <span className="text-red-600">blood <br /> donor</span>{" "}
+              and become <br />a hero.
             </h2>
 
             <p className="text-gray-400 text-lg md:text-xl leading-relaxed max-w-xl">
