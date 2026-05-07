@@ -64,7 +64,7 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://blood-assistant-emd4.vercel.app",  // ← replace with your Vercel URL
+  "https://blood-assistant.vercel.app",
 ];
 
 app.use(
