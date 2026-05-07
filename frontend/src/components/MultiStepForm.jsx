@@ -13,6 +13,41 @@ const MultiStepForm = () => {
   const [coords, setCoords] = useState(null);
   const navigate = useNavigate();
   const [selectedPosition, setSelectedPosition] = useState(null);
+  const [isPincodeLoading, setIsPincodeLoading] = useState(false);
+  const [mapError, setMapError] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    trigger,
+    setValue,
+    formState: { errors },
+  } = useForm();
+
+  const handlePincodeChange = async (e) => {
+    const pin = e.target.value;
+
+    if (pin.length !== 6) return;
+
+    setIsPincodeLoading(true);
+
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+      const data = await res.json();
+
+      const post = data[0]?.PostOffice?.[0];
+      if (!post) return;
+
+      setValue("address.city", post.District);
+      setValue("address.state", post.State);
+      setValue("address.street", post.Name);
+    } catch (err) {
+      console.log("Pincode error:", err);
+    } finally {
+      setIsPincodeLoading(false);
+    }
+  };
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
@@ -20,49 +55,41 @@ const MultiStepForm = () => {
       return;
     }
 
+    setIsDetectingLocation(true);
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        // Set coords (Mongo format)
         setCoords([lng, lat]);
-
-        // Set map position
         setSelectedPosition([lat, lng]);
 
         try {
-          // Reverse geocoding
-          const res = await axios.get(
-            `https://nominatim.openstreetmap.org/reverse`,
-            {
-              params: {
-                lat,
-                lon: lng,
-                format: "json",
-              },
-            },
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
           );
+          const data = await res.json();
 
-          const address = res.data.address;
+          const address = data.address;
 
-          // Auto fill form fields
           if (address) {
-            document.querySelector('input[name="address.city"]').value =
-              address.city || address.town || address.village || "";
-
-            document.querySelector('input[name="address.state"]').value =
-              address.state || "";
-
-            document.querySelector('input[name="address.zipCode"]').value =
-              address.postcode || "";
+            setValue(
+              "address.city",
+              address.city || address.town || address.village || "",
+            );
+            setValue("address.state", address.state || "");
+            setValue("address.zipCode", address.postcode || "");
           }
         } catch (err) {
-          console.error("Geocode error:", err);
+          console.log(err);
+        } finally {
+          setIsDetectingLocation(false);
         }
       },
       (err) => {
         alert("Location access denied");
+        setIsDetectingLocation(false);
       },
     );
   };
@@ -81,13 +108,6 @@ const MultiStepForm = () => {
       console.error("ERROR:", err);
     },
   });
-
-  const {
-    register,
-    handleSubmit,
-    trigger,
-    formState: { errors },
-  } = useForm();
 
   const nextStep = async () => {
     console.log("Next Step");
@@ -121,12 +141,18 @@ const MultiStepForm = () => {
   const prevStep = () => setStep((prev) => prev - 1);
 
   const onSubmit = (formData) => {
-    console.log("FINAL DATA:", formData);
+    if (!coords) {
+      setMapError(true);
+
+      setTimeout(() => setMapError(false), 600);
+
+      return;
+    }
 
     if (coords) {
       formData.address.location = {
         type: "Point",
-        coordinates: coords, // [lng, lat]
+        coordinates: coords,
       };
     }
 
@@ -289,9 +315,7 @@ const MultiStepForm = () => {
               <div>
                 <input
                   placeholder="City"
-                  {...register("address.city", {
-                    required: "City is required",
-                  })}
+                  {...register("address.city")}
                   className="input"
                 />
                 {errors.address?.city && (
@@ -301,9 +325,7 @@ const MultiStepForm = () => {
               <div>
                 <input
                   placeholder="State"
-                  {...register("address.state", {
-                    required: "State is required",
-                  })}
+                  {...register("address.state")}
                   className="input"
                 />
                 {errors.address?.state && (
@@ -316,30 +338,69 @@ const MultiStepForm = () => {
                   {...register("address.zipCode", {
                     required: "Zip Code is required",
                   })}
+                  onChange={(e) => {
+                    handlePincodeChange(e); // your logic
+                    register("address.zipCode").onChange(e); // RHF update
+                  }}
                   className="input"
                 />
+
                 {errors.address?.zipCode && (
                   <p className="error">Zip Code is required</p>
                 )}
+                <p className="text-xs text-gray-400 mt-1">
+                  {isPincodeLoading ? "Fetching location..." : ""}
+                </p>
               </div>
               <div>
                 {/* <p className="text-sm font-semibold mb-2">Select Location</p> */}
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-semibold">Select Location</p>
+                <div
+                  className={`transition-all ${
+                    mapError
+                      ? "animate-shake border-2 border-red-500 rounded-xl p-1"
+                      : ""
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-sm font-semibold">Select Location</p>
 
-                  <button
-                    type="button"
-                    onClick={detectLocation}
-                    className="text-xs bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 my-3"
-                  >
-                    Detect My Location
-                  </button>
+                    <button
+                      type="button"
+                      onClick={detectLocation}
+                      disabled={isDetectingLocation}
+                      className={`text-xs px-3 py-1 rounded-md flex items-center gap-2 ${
+                        isDetectingLocation
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-red-600 hover:bg-red-700 text-white"
+                      }`}
+                    >
+                      {isDetectingLocation ? (
+                        <>
+                          <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Detecting...
+                        </>
+                      ) : (
+                        "Detect My Location"
+                      )}
+                    </button>
+                  </div>
+
+                  <MapPicker
+                    setCoords={setCoords}
+                    selectedPosition={selectedPosition}
+                  />
+                  {isDetectingLocation && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Getting your current location...
+                    </p>
+                  )}
+
+                  {mapError && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Please select location on map or use detect location
+                    </p>
+                  )}
                 </div>
-
-                <MapPicker
-                  setCoords={setCoords}
-                  selectedPosition={selectedPosition}
-                />
                 {coords && (
                   <p className="text-xs text-slate-500 mt-2">
                     Selected: {coords[1]}, {coords[0]}
