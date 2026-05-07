@@ -1,5 +1,5 @@
 const userModel = require("../models/user.model")
-const sendMail = require("../services/mail.service")
+// const sendMail = require("../services/mail.service")
 const jwt = require("jsonwebtoken")
 const customError = require("../utills/customError")
 const responseUtil = require("../utills/response.utill")
@@ -15,34 +15,34 @@ const registerController = async (req, res, next) => {
         if (!newUser) throw new customError("Something went wrong", 400)
         let token = newUser.generateToken()
         //verify email
-        const mailUrl = `${process.env.BACKEND_URL}/api/auth/verify-email/${token}`
-        await sendMail(email, "Verify Your Blood Assistant Account",
-            `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-        <div style="background-color: #ef4444; padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">Blood Assistant</h1>
-        </div>
-        <div style="padding: 30px; text-align: center; line-height: 1.6;">
-            <h2 style="color: #333;">Verify Your Email</h2>
-            <p style="color: #555; font-size: 16px;">
-                Thank you for joining Blood Assistant. Please click the button below to verify your email address and log in to your account.
-            </p>
-            <div style="margin: 30px 0;">
-                <a href="${mailUrl}" style="background-color: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;">
-                    Verify Email Address
-                </a>
-            </div>
-            <p style="color: #888; font-size: 12px;">
-                If the button doesn't work, copy and paste this link into your browser: <br>
-                <a href="${mailUrl}" style="color: #ef4444;">${mailUrl}</a>
-            </p>
-        </div>
-        <div style="background-color: #f9f9f9; padding: 15px; text-align: center; color: #999; font-size: 12px;">
-            &copy; ${new Date().getFullYear()} Blood Assistant. All rights reserved.
-        </div>
-    </div>
-    `
-        );
+        //     const mailUrl = `${process.env.BACKEND_URL}/api/auth/verify-email/${token}`
+        //     await sendMail(email, "Verify Your Blood Assistant Account",
+        //         `
+        // <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        //     <div style="background-color: #ef4444; padding: 20px; text-align: center;">
+        //         <h1 style="color: white; margin: 0; font-size: 24px;">Blood Assistant</h1>
+        //     </div>
+        //     <div style="padding: 30px; text-align: center; line-height: 1.6;">
+        //         <h2 style="color: #333;">Verify Your Email</h2>
+        //         <p style="color: #555; font-size: 16px;">
+        //             Thank you for joining Blood Assistant. Please click the button below to verify your email address and log in to your account.
+        //         </p>
+        //         <div style="margin: 30px 0;">
+        //             <a href="${mailUrl}" style="background-color: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;">
+        //                 Verify Email Address
+        //             </a>
+        //         </div>
+        //         <p style="color: #888; font-size: 12px;">
+        //             If the button doesn't work, copy and paste this link into your browser: <br>
+        //             <a href="${mailUrl}" style="color: #ef4444;">${mailUrl}</a>
+        //         </p>
+        //     </div>
+        //     <div style="background-color: #f9f9f9; padding: 15px; text-align: center; color: #999; font-size: 12px;">
+        //         &copy; ${new Date().getFullYear()} Blood Assistant. All rights reserved.
+        //     </div>
+        // </div>
+        // `
+        //     );
 
         res.cookie("token", token, {
             httpOnly: true,
@@ -53,7 +53,7 @@ const registerController = async (req, res, next) => {
         return responseUtil.created(
             res,
             { token, newUser },
-            "email verification link sent to your account",
+            "User Registered Successfully",
         )
     } catch (error) {
         return next(error)
@@ -89,7 +89,7 @@ const loginController = async (req, res, next) => {
         let existedUser = await userModel.findOne({ email })
         if (!existedUser) throw new customError("user does not exists", 404)
 
-        if (!existedUser.isVerified) throw new customError("verify first from your email", 401)
+        // if (!existedUser.isVerified) throw new customError("verify first from your email", 401)
         // bcrypt.compare ek asynchronous function hai jo Promise return karta hai. Agar aap await nahi lagayenge, toh checkPass hamesha
         //  ek "Pending Promise" rahega. JavaScript mein ek Promise object hamesha truthy mana jata hai, isliye aapki if (!checkPass) wali 
         // condition kabhi trigger hi nahi hoti.
