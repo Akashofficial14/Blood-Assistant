@@ -15,12 +15,34 @@ const registerController = async (req, res, next) => {
         if (!newUser) throw new customError("Something went wrong", 400)
         let token = newUser.generateToken()
         //verify email
-        const mailUrl = `http://localhost:3000/api/auth/verify-email/${token}`
-        await sendMail(email, "Verification Email ",
-            `<h3>click on the below link to login to your account</h3>
-             ${mailUrl}
+        const mailUrl = `${process.env.BACKEND_URL}/api/auth/verify-email/${token}`
+        await sendMail(email, "Verify Your Blood Assistant Account",
             `
-        )
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #ef4444; padding: 20px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">Blood Assistant</h1>
+        </div>
+        <div style="padding: 30px; text-align: center; line-height: 1.6;">
+            <h2 style="color: #333;">Verify Your Email</h2>
+            <p style="color: #555; font-size: 16px;">
+                Thank you for joining Blood Assistant. Please click the button below to verify your email address and log in to your account.
+            </p>
+            <div style="margin: 30px 0;">
+                <a href="${mailUrl}" style="background-color: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;">
+                    Verify Email Address
+                </a>
+            </div>
+            <p style="color: #888; font-size: 12px;">
+                If the button doesn't work, copy and paste this link into your browser: <br>
+                <a href="${mailUrl}" style="color: #ef4444;">${mailUrl}</a>
+            </p>
+        </div>
+        <div style="background-color: #f9f9f9; padding: 15px; text-align: center; color: #999; font-size: 12px;">
+            &copy; ${new Date().getFullYear()} Blood Assistant. All rights reserved.
+        </div>
+    </div>
+    `
+        );
 
         res.cookie("token", token, {
             httpOnly: true,
@@ -128,7 +150,7 @@ const forgetPasswordController = async (req, res, next) => {
         );
 
         // Reset Link - Frontend route link
-        let link = `http://localhost:5173/login/reset-pass/${token}`;
+        let link = `${process.env.FRONTEND_URL}/login/reset-pass/${token}`;
 
         // Send the email
         await sendMail(
@@ -214,7 +236,7 @@ const updateProfileController = async (req, res, next) => {
     try {
         const { userID } = req.params;
         const { name, email } = req.body;
-        console.log('userID from params:', userID,name,email);
+        console.log('userID from params:', userID, name, email);
 
         if (!userID) throw new customError("User ID is required", 400);
         const loggedInUserId = req.user.id || req.user._id; // Depending on your token payload

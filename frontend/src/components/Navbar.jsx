@@ -23,8 +23,10 @@ const Navbar = () => {
         }
 
         setIsLoggedIn(true);
-        const res = await axios.get("http://localhost:3000/api/auth/profile", {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await axiosInstance.get("/auth/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (res.data?.user) {

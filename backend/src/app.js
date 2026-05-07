@@ -23,7 +23,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/api/auth/google/callback",
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
     },
     async function (accessToken, refreshToken, profile, cb) {
       try {
@@ -62,11 +62,22 @@ passport.use(
 app.use(express.json());
 app.use(cookieParser());
 app.set("view engine", "ejs");
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://blood-assistant-emd4.vercel.app",  // ← replace with your Vercel URL
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
-  }),
+  })
 );
 // app.get("/",(req,res)=>{
 //     res.render("index.ejs")

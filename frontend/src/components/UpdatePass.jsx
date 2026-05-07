@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router";
 import { ShieldCheck, Droplet, Eye, EyeOff, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import axiosInstance from "../config/axiosInstance";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -28,8 +29,8 @@ const ResetPassword = () => {
   useEffect(() => {
     const verifyTokenOnLoad = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:3000/api/auth/reset-password/${token}`
+        const response = await axiosInstance.get(
+          `/auth/reset-password/${token}`,
         );
         // Ensure your backend sends back { success: true, data: { userID: "..." } }
         if (response.data.success && response.data.data.userID) {
@@ -55,12 +56,9 @@ const ResetPassword = () => {
     }
 
     try {
-      const res = await axios.post(
-        `http://localhost:3000/api/auth/update-password/${userID}`,
-        {
-          password: data.password,
-        }
-      );
+      const res = await axiosInstance.post(`/auth/update-password/${userID}`, {
+        password: data.password,
+      });
 
       if (res.data.success) {
         toast.success("Password updated! You can now login.");
@@ -121,8 +119,7 @@ const ResetPassword = () => {
                   pattern: {
                     value:
                       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-                    message:
-                      "Include uppercase, lowercase, number and symbol",
+                    message: "Include uppercase, lowercase, number and symbol",
                   },
                 })}
                 className={`w-full rounded-xl border p-3.5 pl-11 pr-12 outline-none transition-all ${

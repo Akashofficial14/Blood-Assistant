@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import axiosInstance from "../../config/axiosInstance";
 
 const BLOOD_GROUPS = ["All", "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 const DISTANCES = [2, 5, 10, 20, 50];
@@ -42,7 +43,7 @@ export default function BloodBanks() {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         try {
-          const res = await axios.get(`http://localhost:3000/api/bloodbanks/nearby?latitude=${latitude}&longitude=${longitude}&radius=${selectedDistance}`, { withCredentials: true });
+          const res = await axiosInstance.get(`/bloodbanks/nearby?latitude=${latitude}&longitude=${longitude}&radius=${selectedDistance}`, { withCredentials: true });
           if (res.data?.bloodBanks?.length) setBanks(res.data.bloodBanks);
         } catch {
           // fallback to mock

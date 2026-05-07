@@ -20,7 +20,7 @@ router.get("/google", passport.authenticate("google", { scope: ['profile', 'emai
 router.get("/google/callback", 
   passport.authenticate('google', { 
     session: false,
-    failureRedirect: 'http://localhost:5173/login?error=google_auth_failed'
+    failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_auth_failed`
   }),
   (req, res) => {
     try {
@@ -32,10 +32,10 @@ router.get("/google/callback",
       );
 
       // Redirect back to Frontend with the token in the URL
-      res.redirect(`http://localhost:5173/google-auth-success/${token}`)
+      res.redirect(`${process.env.FRONTEND_URL}/google-auth-success/${token}`)
     } catch (error) {
       console.error("Error in Google callback:", error);
-      res.redirect(`http://localhost:5173/login?error=token_generation_failed`)
+      res.redirect(`${process.env.FRONTEND_URL}/login?error=token_generation_failed`)
     }
   }
 );

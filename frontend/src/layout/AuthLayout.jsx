@@ -7,6 +7,7 @@ import { Eye, EyeOff, Droplet } from "lucide-react";
 import MultiStepForm from "../components/MultiStepForm";
 // ✅ Correct
 import { getBloodbankDetails } from "../api/blood bank/getBloodBankDetails";
+import axiosInstance from "../config/axiosInstance";
 
 const AuthLayout = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,15 +27,13 @@ const AuthLayout = () => {
   const selectedRole = watch("userRole");
 
   const onSubmit = async (data) => {
-    const endpoint = isLogin
-      ? "http://localhost:3000/api/auth/login"
-      : "http://localhost:3000/api/auth/register";
+    const endpoint = isLogin ? "auth/login" : "auth/register";
 
     try {
       // 1. WIPE EVERYTHING before the new login attempt starts
       localStorage.clear();
 
-      const res = await axios.post(endpoint, data, { withCredentials: true });
+      const res = await axiosInstance.post(endpoint, data, { withCredentials: true });
 
       if (res.data && res.data.success) {
         const resData = res.data.data || {};
@@ -74,7 +73,7 @@ const AuthLayout = () => {
   };
   const handleGoogleAuth = () => {
     // Now proceed to Google Login
-    window.location.href = "http://localhost:3000/api/auth/google";
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
   };
   const toggleMode = () => {
     setIsLogin(!isLogin);

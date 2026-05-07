@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { LogOut, User } from "lucide-react";
+import axiosInstance from "../config/axiosInstance";
 
 const Logout = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,8 +25,7 @@ const Logout = ({ user }) => {
     try {
       const token = localStorage.getItem("token");
       // Call logout endpoint
-      await axios.post(
-        "http://localhost:3000/api/auth/logout",
+      await axiosInstance.post("/auth/logout",
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

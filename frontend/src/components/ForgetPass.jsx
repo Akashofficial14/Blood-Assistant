@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { Navigate, useNavigate } from "react-router";
 
 const ForgotPassword = () => {
-   let navigate= useNavigate()
+  let navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -15,10 +15,7 @@ const ForgotPassword = () => {
 
   const onSubmit = async (data) => {
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/auth/forget-password",
-        data,
-      );
+      const res = await axiosInstance.post("/auth/forget-password", data);
       if (res.data) {
         toast.success("Reset link sent! Please check your email inbox.");
       }
@@ -31,7 +28,7 @@ const ForgotPassword = () => {
   const onBack = () => {
     // <Navigate to={"/login"} />;
     //jab return karna ho tab use karte hai normally navigate
-    navigate("/login")
+    navigate("/login");
   };
   return (
     // min-h-screen and bg-gray-50 to match your Login background

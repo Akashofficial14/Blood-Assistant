@@ -8,6 +8,7 @@ import { useNavigate } from "react-router";
 import axios from "axios";
 import DonarDirectory from "./features/Requests";
 import Chatbot from "../../components/ChatBot";
+import axiosInstance from "../../config/axiosInstance";
 
 const SidebarItem = ({ label, icon, active, onClick }) => (
   <div
@@ -60,8 +61,7 @@ const OwnerDashboard = () => {
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:3000/api/auth/logout",
+      await axiosInstance.post("/auth/logout",
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

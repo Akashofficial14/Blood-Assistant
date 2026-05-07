@@ -9,6 +9,7 @@ import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
 import axios from "axios";
 import Chatbot from "../../components/ChatBot";
+import axiosInstance from "../../config/axiosInstance";
 
 // --- Sub-components ---
 
@@ -124,8 +125,8 @@ const FacilityDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       // 1. Optional: Call your backend to invalidate the session
-      let res = await axios.post(
-        "http://localhost:3000/api/auth/logout",
+      let res = await axiosInstance.post(
+        "/auth/logout",
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
