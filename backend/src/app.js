@@ -64,7 +64,7 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://blood-assistant.vercel.app",
+  "https://blood-assistant-emd4.vercel.app",
 ];
 
 app.use(
@@ -79,6 +79,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.options("*", cors()); // ← add this line
 // app.get("/",(req,res)=>{
 //     res.render("index.ejs")
 // })
